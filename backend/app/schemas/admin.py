@@ -24,6 +24,48 @@ class UserRoleUpdateRequest(BaseModel):
 
 class UserStatusUpdateRequest(BaseModel):
     is_active: bool = Field(..., description="Foydalanuvchi faollik holati")
+    reason: Optional[str] = Field(None, description="Bloklash yoki faollashtirish sababi")
+    blacklist_tokens: bool = Field(True, description="Faol tokenlarni Redis qora ro'yxatiga kiritish")
+
+
+class VenueUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    district: Optional[str] = None
+    format: Optional[str] = None
+    price_per_hour: Optional[float] = None
+    facilities: Optional[Dict[str, Any]] = None
+    images: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class RevenueHistoryItem(BaseModel):
+    date: str
+    amount_uzs: float
+    bookings_count: int
+
+
+class AdminRealtimeResponse(BaseModel):
+    online_users_now: int
+    app_installations: Dict[str, int]
+    today_revenue_uzs: float
+    total_revenue_uzs: float
+    revenue_history: List[RevenueHistoryItem]
+    active_held_bookings: int
+    confirmed_bookings: int
+
+
+class SlotCalendarItem(BaseModel):
+    id: str
+    pitch_name: str
+    start_time: str
+    end_time: str
+    price: float
+    is_available: bool
+    booking_id: Optional[str] = None
+    booked_by: Optional[str] = None
 
 
 class VenuePitchInput(BaseModel):

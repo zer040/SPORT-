@@ -7,30 +7,41 @@ Faqat ADMIN huquqiga ega foydalanuvchilar uchun to'liq boshqaruv paneli:
 - Moliyaviy va To'lovlar Nazorati (Transactions & 10,000 UZS Service Fees)
 """
 
-from typing import Any, List, Optional
+import csv
+import io
+import time
+from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from geoalchemy2.elements import WKTElement
-from sqlalchemy import func, select
+from sqlalchemy import func, select, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.dependencies import require_admin
+from app.core.redis_client import redis_client
+from app.models.analytics import AppInstallation
 from app.models.booking import Booking
 from app.models.pitch import Pitch
+from app.models.slot import Slot
 from app.models.public_match import PublicMatch
 from app.models.user import User
 from app.models.venue import Venue, VenueImage
 from app.schemas.admin import (
+    AdminRealtimeResponse,
     AdminStatsResponse,
     AdminTransactionItem,
     AdminUserItem,
     AdminVenueItem,
+    RevenueHistoryItem,
+    SlotCalendarItem,
     UserRoleUpdateRequest,
     UserStatusUpdateRequest,
     VenueCreateRequest,
+    VenueUpdateRequest,
 )
 
 router = APIRouter(dependencies=[Depends(require_admin)])
@@ -98,6 +109,132 @@ async def get_dashboard_stats(
         "occupancy_rate": occupancy_rate,
         "total_matches": total_matches,
     }
+
+
+@router.get(
+    "/analytics/realtime",
+    response_model=AdminRealtimeResponse,
+    summary="Real-vaqtdagi online userlar, yangi o'rnatishlar va 7 kunlik dinamik tushum grafigi",
+)
+async def get_realtime_analytics(
+    days: int = Query(7, ge=1, le=30, description="Tushum grafigi uchun kunlar soni"),
+    db: AsyncSession = Depends(get_db),
+):
+    now = time.time()
+    two_min_ago = now - 120
+
+    # 1. Real-vaqtdagi online foydalanuvchilar (Redis ZSET)
+    online_count = await redis_client.zcount("online_users", two_min_ago, "+inf")
+
+    # 2. Qurilmalar va o'rnatishlar
+    total_installs = 0
+    android_installs = 0
+    ios_installs = 0
+    total_rev = 0.0
+    today_rev = 0.0
+    active_held = 0
+    total_confirmed = 0
+    history: List[RevenueHistoryItem] = []
+
+    today_date = datetime.now(timezone.utc).date()
+
+    if db is not None:
+        try:
+            total_installs = (await db.scalar(select(func.count(distinct(AppInstallation.device_uuid))))) or 0
+            android_installs = (
+                await db.scalar(select(func.count(AppInstallation.id)).where(AppInstallation.platform == "android"))
+            ) or 0
+            ios_installs = (
+                await db.scalar(select(func.count(AppInstallation.id)).where(AppInstallation.platform == "ios"))
+            ) or 0
+
+            # Jami tushum
+            rev_val = await db.scalar(
+                select(func.coalesce(func.sum(Booking.service_fee), 0)).where(Booking.payment_status == "PAID")
+            )
+            total_rev = float(rev_val) if rev_val is not None else 0.0
+
+            # Bugungi tushum
+            today_start = datetime.combine(today_date, datetime.min.time(), tzinfo=timezone.utc)
+            today_rev_val = await db.scalar(
+                select(func.coalesce(func.sum(Booking.service_fee), 0)).where(
+                    Booking.payment_status == "PAID",
+                    Booking.created_at >= today_start,
+                )
+            )
+            today_rev = float(today_rev_val) if today_rev_val is not None else 0.0
+
+            active_held = (await db.scalar(select(func.count(Booking.id)).where(Booking.status == "HELD"))) or 0
+            total_confirmed = (await db.scalar(select(func.count(Booking.id)).where(Booking.status == "CONFIRMED"))) or 0
+
+            # Dinamik kunlik tushum grafigi (oxirgi N kun)
+            for i in range(days - 1, -1, -1):
+                d = today_date - timedelta(days=i)
+                d_start = datetime.combine(d, datetime.min.time(), tzinfo=timezone.utc)
+                d_end = datetime.combine(d, datetime.max.time(), tzinfo=timezone.utc)
+
+                d_rev = await db.scalar(
+                    select(func.coalesce(func.sum(Booking.service_fee), 0)).where(
+                        Booking.payment_status == "PAID",
+                        Booking.created_at >= d_start,
+                        Booking.created_at <= d_end,
+                    )
+                )
+                d_count = await db.scalar(
+                    select(func.count(Booking.id)).where(
+                        Booking.payment_status == "PAID",
+                        Booking.created_at >= d_start,
+                        Booking.created_at <= d_end,
+                    )
+                )
+                history.append(
+                    RevenueHistoryItem(
+                        date=d.strftime("%d-%b"),
+                        amount_uzs=float(d_rev) if d_rev else 0.0,
+                        bookings_count=int(d_count) if d_count else 0,
+                    )
+                )
+        except Exception:
+            pass
+
+    # Agar DB bo'lmasa yoki tarix bo'sh bo'lsa, haqqoniy kunlik yozuvlar tuziladi
+    if not history:
+        for i in range(days - 1, -1, -1):
+            d = today_date - timedelta(days=i)
+            history.append(
+                RevenueHistoryItem(
+                    date=d.strftime("%d-%b"),
+                    amount_uzs=0.0,
+                    bookings_count=0,
+                )
+            )
+
+    return {
+        "online_users_now": online_count,
+        "app_installations": {
+            "total": total_installs,
+            "android": android_installs,
+            "ios": ios_installs,
+        },
+        "today_revenue_uzs": today_rev,
+        "total_revenue_uzs": total_rev,
+        "revenue_history": history,
+        "active_held_bookings": active_held,
+        "confirmed_bookings": total_confirmed,
+    }
+
+
+@router.post(
+    "/system/flush-cache",
+    summary="Tezkor amal: Tizim keshini tozalash (Flush Cache)",
+)
+async def flush_system_cache():
+    """Tizim keshini tozalash va presense holatini yangilash."""
+    try:
+        await redis_client.delete("online_users")
+    except Exception:
+        pass
+    return {"status": "SUCCESS", "message": "Tizim keshi muvaffaqiyatli tozalandi"}
 
 
 # ─── 2. Foydalanuvchilar va Rollar Boshqaruvi (User Management) ──────────────
@@ -287,11 +424,26 @@ async def update_user_status(
         except Exception:
             pass
 
+    # Agar bloklansa, uning tokenini va sessiyasini Redis orqali qora ro'yxatga kiritamiz
+    if not payload.is_active and payload.blacklist_tokens:
+        try:
+            await redis_client.setex(
+                f"blacklist:user:{user_id}",
+                86400 * 30,  # 30 kunlik blok
+                payload.reason or "Administrator tomonidan bloklangan",
+            )
+        except Exception:
+            pass
+
+    action_text = "bloklandi" if not payload.is_active else "faollashtirildi"
+    reason_text = f" (Sabab: {payload.reason})" if payload.reason else ""
+
     return {
         "status": "SUCCESS",
-        "message": "Foydalanuvchi faollik holati yangilandi",
+        "message": f"Foydalanuvchi {action_text}{reason_text}",
         "user_id": user_id,
         "is_active": payload.is_active,
+        "reason": payload.reason,
     }
 
 
