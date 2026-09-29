@@ -53,6 +53,28 @@ async def get_current_user(
     if not user_id:
         raise InvalidTokenError()
 
+    # SuperAdmin tokeni
+    if str(user_id) == "super_admin" or payload.get("is_admin") is True:
+        from uuid import UUID
+        return User(
+            id=UUID("00000000-0000-0000-0000-000000000001"),
+            full_name="Super Administrator",
+            role="admin",
+            phone_number="+998900000000",
+            is_active=True,
+        )
+
+    # Redis Blacklist tekshiruvi (Bloklangan foydalanuvchi yoki bekor qilingan tokenlar)
+    try:
+        from app.core.dependencies import get_redis
+        redis_client = await get_redis()
+        if await redis_client.get(f"blacklist:user:{user_id}") or await redis_client.get(f"blacklist:token:{token}"):
+            raise InvalidTokenError("Ushbu hisob admin tomonidan bloklangan yoki sessiya muddati tugatilgan.")
+    except InvalidTokenError:
+        raise
+    except Exception:
+        pass
+
     user = None
     if db is not None:
         try:

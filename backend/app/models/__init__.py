@@ -23,6 +23,7 @@ from app.models.escrow_payment import EscrowPayment
 
 # Gamification modellari
 from app.models.badge import Badge, UserBadge
+from app.models.app_installation import AppInstallation
 
 __all__ = [
     "User",
@@ -44,4 +45,5 @@ __all__ = [
     "EscrowPayment",
     "Badge",
     "UserBadge",
+    "AppInstallation",
 ]

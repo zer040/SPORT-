@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sport+ | Administrator Boshqaruv Markazi</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Clean Light Frosted Glass Design System Stylesheets (Multi-source) -->
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <link rel="stylesheet" href="/static/admin/admin.css" />
+  <link rel="stylesheet" href="./admin.css" />
+
+  <style>
+    /* Critical Inline CSS to constrain SVGs and layout */
+    svg { max-width: 100%; }
+    .nav-link svg, .sidebar svg { width: 20px; height: 20px; max-width: 20px; max-height: 20px; flex-shrink: 0; }
+    .brand-icon svg { width: 24px; height: 24px; max-width: 24px; max-height: 24px; }
+    .stat-icon svg { width: 20px; height: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       FROSTED GLASS SUPERADMIN LOGIN SCREEN
+  ───────────────────────────────────────────────────────────── -->
+  <div id="loginScreen" class="login-screen-overlay">
+    <div class="login-ambient-blob blob-1"></div>
+    <div class="login-ambient-blob blob-2"></div>
+    <div class="login-ambient-blob blob-3"></div>
+
+    <div class="login-glass-card" id="loginCard">
+      <div class="login-brand">
+        <div class="brand-badge-icon">
+          <span style="font-size:1.35rem; line-height: 1;">⚽</span>
+        </div>
+        <h1 class="brand-title">Sport<span style="color:#10b981;">+</span></h1>
+      </div>
+
+      <div id="loginErrorAlert" class="login-error-alert" style="display:none;">
+        <span id="loginErrorText">Login yoki parol noto'g'ri.</span>
+      </div>
+
+      <form id="adminLoginForm" class="login-form">
+        <div class="login-input-wrap">
+          <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <input type="text" id="adminUsername" class="login-input" placeholder="Login" required autocomplete="username" autofocus />
+        </div>
+
+        <div class="login-input-wrap">
+          <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <input type="password" id="adminPassword" class="login-input" placeholder="Parol" required autocomplete="current-password" />
+          <button type="button" id="btnTogglePassword" class="password-toggle-btn" title="Parolni ko'rsatish/yashirish">
+            <svg id="eyeIconOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg id="eyeIconClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          </button>
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="btn-login-submit">
+          <span id="loginBtnSpinner" class="spinner" style="display:none;"></span>
+          <span id="loginBtnText">Kirish</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-layout" id="adminLayout" style="display:none;">
+    <!-- ─────────────────────────────────────────────────────────────
+         FROSTED GLASS SIDEBAR
+    ───────────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">
+            Sport+
+            <span class="brand-badge">ADMIN</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a class="nav-link active" data-tab="dashboard">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+            <span>Boshqaruv & Tahlil</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="venues">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            <span>Stadionlar & Maydonlar</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="users">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>Foydalanuvchilar & Rollar</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-tab="finance">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+            <span>Moliya & To'lovlar</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Quick Actions Sidebar Footer -->
+      <div class="sidebar-footer">
+        <button id="btnFlushCache" class="quick-action-btn" title="Redis platforma keshini tozalash">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+          <span>Flush Redis Cache</span>
+        </button>
+        <button id="btnCleanMatches" class="quick-action-btn" title="Muddati o'tgan bo'sh o'yinlarni yangilash">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Bo'sh o'yinlarni tozalash</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ─────────────────────────────────────────────────────────────
+         MAIN CONTENT AREA
+    ───────────────────────────────────────────────────────────── -->
+    <main class="main-content">
+      <!-- Top Sticky Header -->
+      <header class="top-header">
+        <div class="header-title-area">
+          <h1>Sport+ Boshqaruv Markazi</h1>
+          <p>Lokal futbol maydonlari ekotizimi va 10,000 UZS monetizatsiya nazorati</p>
+        </div>
+
+        <div class="header-controls">
+          <!-- Pulsing Live Indicator (Redis Heartbeat) -->
+          <div class="live-pill">
+            <span class="pulse-dot"></span>
+            <span>LIVE REDIS</span>
+          </div>
+
+          <!-- Admin Avatar, Role & Logout -->
+          <div class="admin-profile">
+            <div class="admin-avatar">SA</div>
+            <span class="admin-name" id="adminNameDisplay">Super Administrator</span>
+            <button id="btnAdminLogout" class="btn-logout" title="Admin tizimidan chiqish">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              <span>Chiqish</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-container">
+        <!-- ══════════════════════════════════════════════════════════
+             1. DASHBOARD & REALTIME TAHLIL VIEW
+        ══════════════════════════════════════════════════════════ -->
+        <section id="view-dashboard" class="page-view active">
+          <!-- 4 Ta Asosiy KPI Kartalari -->
+          <div class="stats-grid">
+            <!-- 1. Ayni damda online (Redis Heartbeat) -->
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">Ayni damda online</span>
+                <div class="stat-icon icon-emerald">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statOnlineUsers">0</div>
+              <div class="stat-footer">
+                <span class="stat-trend positive">● Jonli</span>
+                <span>Redis Heartbeat (5 min faol)</span>
+              </div>
+            </div>
+
+            <!-- 2. Mobil Ilova O'rnatishlari (Android / iOS / Web) -->
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">App Installs</span>
+                <div class="stat-icon icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statAppInstalls">2,630</div>
+              <div class="installs-breakdown">
+                <div class="install-item">
+                  <span class="platform-badge badge-android">Android</span>
+                  <span id="instAndroid">1,420</span>
+                </div>
+                <div class="install-item">
+                  <span class="platform-badge badge-ios">iOS</span>
+                  <span id="instIos">890</span>
+                </div>
+                <div class="install-item">
+                  <span class="platform-badge badge-web">Web</span>
+                  <span id="instWeb">320</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Platform Revenue (10,000 UZS servis tushumlari) -->
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">Platform Revenue</span>
+                <div class="stat-icon icon-amber">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><line x1="12" y1="6" x2="12" y2="8"></line><line x1="12" y1="16" x2="12" y2="18"></line></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statTotalRevenue">0 UZS</div>
+              <div class="stat-footer">
+                <span class="stat-trend positive">10 000 UZS</span>
+                <span>har bir tasdiqlangan bron uchun</span>
+              </div>
+            </div>
+
+            <!-- 4. Tasdiqlangan Bronlar -->
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">Tasdiqlangan Bronlar</span>
+                <div class="stat-icon icon-purple">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="statConfirmedBookings">0</div>
+              <div class="stat-footer">
+                <span>Jami foydalanuvchilar: <strong id="statTotalUsers">0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Platform Revenue Chart Section -->
+          <div class="chart-section">
+            <div class="glass-card">
+              <div class="chart-card-header">
+                <div class="chart-title-box">
+                  <h3>Platforma Tushumlari Dinamikasi</h3>
+                  <p>10,000 UZS lik servis to'lovlarining kunlik grafigi</p>
+                </div>
+                <div class="chart-tabs">
+                  <button id="tab7d" class="chart-tab-btn active">7 Kun</button>
+                  <button id="tab30d" class="chart-tab-btn">30 Kun</button>
+                </div>
+              </div>
+              <div id="chartSvgContainer" class="chart-svg-container"></div>
+            </div>
+
+            <!-- Platform Breakdown Summary -->
+            <div class="glass-card" style="display:flex; flex-direction:column; justify-content:center;">
+              <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:16px;">Platforma Xulosasi</h3>
+              <div class="summary-item">
+                <span class="summary-label">Faol Maydon Majmualari:</span>
+                <span id="sumVenuesCount" class="summary-val">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Jami Maydonlar (Pitches):</span>
+                <span id="sumPitchesCount" class="summary-val">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Solo Play O'yinlari:</span>
+                <span id="sumMatchesCount" class="summary-val">0</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Kafolatli Servis Narxi:</span>
+                <span class="summary-val" style="color:#059669;">10 000 UZS</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             2. STADIONLAR & MAYDONLAR VIEW
+        ══════════════════════════════════════════════════════════ -->
+        <section id="view-venues" class="page-view">
+          <div class="view-header">
+            <div class="view-header-text">
+              <h2>Stadionlar & Maydonlar</h2>
+            </div>
+            <div class="view-actions">
+              <button id="btnOpenAddVenue" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Yangi Stadion Qo'shish</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Venues Grid -->
+          <div id="venuesGrid" class="venues-grid">
+            <!-- Javascript orqali render qilinadi -->
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             3. FOYDALANUVCHILAR & ROLLLAR VIEW
+        ══════════════════════════════════════════════════════════ -->
+        <section id="view-users" class="page-view">
+          <div class="view-header">
+            <div class="view-header-text">
+              <h2>Foydalanuvchilar</h2>
+            </div>
+          </div>
+
+          <!-- Live Debounced Search and Filters Bar -->
+          <div class="filter-bar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="searchUsersInput" class="search-input" placeholder="Qidirish..." />
+            </div>
+
+            <div class="filter-group">
+              <select id="filterUserRole" class="filter-select">
+                <option value="">Barcha Rollar</option>
+                <option value="player">O'yinchi</option>
+                <option value="owner">Maydon Egasi</option>
+                <option value="admin">Administrator</option>
+              </select>
+
+              <select id="filterUserStatus" class="filter-select">
+                <option value="">Barcha Holatlar</option>
+                <option value="true">Faqat Faollar</option>
+                <option value="false">Bloklanganlar</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="clean-table">
+                <thead>
+                  <tr>
+                    <th>Foydalanuvchi</th>
+                    <th>Rol (RBAC)</th>
+                    <th>O'yinlar</th>
+                    <th>Reyting</th>
+                    <th>Faollik</th>
+                    <th>Holati</th>
+                    <th>Boshqaruv</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <!-- Javascript render qiladi -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════
+             4. MOLIYA & TO'LOVLAR VIEW
+        ══════════════════════════════════════════════════════════ -->
+        <section id="view-finance" class="page-view">
+          <div class="view-header">
+            <div class="view-header-text">
+              <h2>Moliya & To'lovlar</h2>
+            </div>
+            <div class="view-actions">
+              <button id="btnExportFinance" class="btn-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Export to Excel (CSV)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial Summary Cards -->
+          <div class="stats-grid">
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">Platforma Servis Daromadi</span>
+                <div class="stat-icon icon-emerald">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M6 12h12"></path></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="financeTotalRev">0 UZS</div>
+              <div class="stat-footer">
+                <span class="stat-trend positive">100% Real</span>
+                <span>Faqat 10,000 UZS lik servis to'lovlari</span>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="stat-header">
+                <span class="stat-title">Jami Tranzaksiyalar</span>
+                <div class="stat-icon icon-blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                </div>
+              </div>
+              <div class="stat-value" id="financeTotalCount">0</div>
+              <div class="stat-footer">
+                <span>Click / Payme provayderlari</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Search -->
+          <div class="filter-bar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="searchFinanceInput" class="search-input" placeholder="Tranzaksiya ID yoki mijoz ismi..." />
+            </div>
+          </div>
+
+          <!-- Transactions Table -->
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="clean-table">
+                <thead>
+                  <tr>
+                    <th>Tranzaksiya ID</th>
+                    <th>Mijoz</th>
+                    <th>Stadion & Vaqt</th>
+                    <th>Platforma Haq (10k)</th>
+                    <th>Tizim</th>
+                    <th>Holati</th>
+                    <th>Amal</th>
+                  </tr>
+                </thead>
+                <tbody id="financeTableBody">
+                  <!-- Javascript render qiladi -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 1: YANGI STADION QO'SHISH (XARITA KOORDINATALARI BILAN)
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalAddVenue" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Yangi Stadion Qo'shish</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalAddVenue')">&times;</button>
+      </div>
+      <form id="addVenueForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Stadion Nomi *</label>
+            <input type="text" id="newVenueName" class="form-input" required placeholder="Masalan: Paxtakor Mini Arena" />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Shahar *</label>
+              <input type="text" id="newVenueCity" class="form-input" value="Toshkent" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Maydon Egasi (OWNER) *</label>
+              <select id="newVenueOwner" class="form-select" required></select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Manzil *</label>
+            <input type="text" id="newVenueAddress" class="form-input" required placeholder="Shayxontohur tumani, Paxtakor ko'chasi 1" />
+          </div>
+
+          <!-- Interaktiv Leaflet Xarita Koordinatalari -->
+          <div class="form-group">
+            <label class="form-label">Xaritada Joylashuv (Marker orqali koordinata tanlang)</label>
+            <div id="mapPicker" class="map-picker-container"></div>
+            <div class="form-grid-2" style="margin-top:8px;">
+              <input type="text" id="newVenueLat" class="form-input" readonly placeholder="Latitude" />
+              <input type="text" id="newVenueLon" class="form-input" readonly placeholder="Longitude" />
+            </div>
+          </div>
+
+          <!-- Formatlar: 5x5, 7x7, 11x11 -->
+          <div class="form-group">
+            <label class="form-label">Mavjud Maydon Formatlari</label>
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="fmt5x5" checked /> 5x5 Mini (200,000 UZS)
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="fmt7x7" checked /> 7x7 Standart (300,000 UZS)
+              </label>
+              <label style="display:flex; align-items:center; gap:6px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="fmt11x11" /> 11x11 Katta Arena (600,000 UZS)
+              </label>
+            </div>
+          </div>
+
+          <!-- Stadion Rasmi URL -->
+          <div class="form-group">
+            <label class="form-label">Stadion Rasmi (URL)</label>
+            <input type="url" id="newVenueImageUrl" class="form-input" placeholder="https://images.unsplash.com/..." />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalAddVenue')">Bekor Qilish</button>
+          <button type="submit" class="btn-primary">Stadionni Saqlash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 2: STADIONNI TAHRIRLASH
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalEditVenue" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Stadionni Tahrirlash</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalEditVenue')">&times;</button>
+      </div>
+      <form id="editVenueForm" onsubmit="handleEditVenueSubmit(event)">
+        <input type="hidden" id="editVenueId" />
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Stadion Nomi</label>
+            <input type="text" id="editVenueName" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Shahar</label>
+            <input type="text" id="editVenueCity" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Manzil</label>
+            <input type="text" id="editVenueAddress" class="form-input" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalEditVenue')">Bekor Qilish</button>
+          <button type="submit" class="btn-primary">O'zgarishlarni Saqlash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 3: VAQT SLOTLARI JADVALI (CALENDAR GRID)
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalSlotsCalendar" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="slotsModalTitle">Vaqt Slotlari Jadvali</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalSlotsCalendar')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="slotsGridContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeModal('modalSlotsCalendar')">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 4: XARITADA JOYLASHUV (MAP VIEW)
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalMapView" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="mapModalTitle">Xaritada Joylashuv</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalMapView')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="venueDetailMap" style="width:100%; height:320px; border-radius:12px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeModal('modalMapView')">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 5: FOYDALANUVCHINI BLOKLASH (SABAB BILAN)
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalBanUser" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px;">
+      <div class="modal-header">
+        <h3 style="color:#ef4444;">Foydalanuvchini Bloklash</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalBanUser')">&times;</button>
+      </div>
+      <form id="banUserForm" onsubmit="handleBanFormSubmit(event)">
+        <input type="hidden" id="banUserId" />
+        <div class="modal-body">
+          <p style="font-size:0.9rem; color:var(--text-secondary);">
+            Siz rostdan ham <strong id="banUserNameText"></strong> hisobini bloklamoqchimisiz?
+            Foydalanuvchining barcha faol JWT tokenlari Redis qora ro'yxatiga kiritiladi.
+          </p>
+          <div class="form-group">
+            <label class="form-label">Bloklash Sababi *</label>
+            <textarea id="banReasonInput" class="form-textarea" rows="3" required placeholder="Masalan: Soxta bronlar va platforma qoidalarini buzish"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalBanUser')">Bekor Qilish</button>
+          <button type="submit" class="btn-primary" style="background:#ef4444; border-color:#ef4444;">Bloklash</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       MODAL 6: TO'LOV TAFSILOTLARI (TRANSACTION INSPECTOR)
+  ───────────────────────────────────────────────────────────── -->
+  <div id="modalTransactionInspector" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>To'lov Tafsilotlari (Transaction Inspector)</h3>
+        <button class="modal-close-btn" onclick="closeModal('modalTransactionInspector')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:10px;">
+          <div><strong>Tranzaksiya ID:</strong> <span id="inspTxId" style="font-family:'JetBrains Mono'; color:#059669; font-weight:700;"></span></div>
+          <div><strong>Mijoz:</strong> <span id="inspClient"></span></div>
+          <div><strong>Stadion:</strong> <span id="inspVenue"></span></div>
+          <div><strong>Maydon:</strong> <span id="inspPitch"></span></div>
+          <div><strong>Vaqt Sloti:</strong> <span id="inspSlot"></span></div>
+          <div><strong>Umumiy Narx:</strong> <span id="inspTotalAmount" style="font-weight:700;"></span></div>
+          <div><strong>Platforma Kafolat Haq:</strong> <span id="inspServiceFee" style="font-weight:800; color:#059669;"></span></div>
+          <div><strong>To'lov Tizimi:</strong> <span id="inspProvider"></span></div>
+          <div><strong>Holati:</strong> <span id="inspStatus"></span></div>
+          <div><strong>Sana va Vaqt:</strong> <span id="inspDate"></span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="closeModal('modalTransactionInspector')">Yopish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Controller Script (Multi-source fallback) -->
+  <script src="/admin/admin.js"></script>
+  <script src="/static/admin/admin.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>

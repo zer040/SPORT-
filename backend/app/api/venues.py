@@ -88,26 +88,6 @@ async def list_venues(
                 )
         except Exception:
             items = []
-
-    # DB o'chiq bo'lsa yoki ma'lumot bo'lmasa -> MOCK_VENUES qaytariladi
-    if not items:
-        from app.services.mock_data import MOCK_VENUES
-        for mv in MOCK_VENUES:
-            items.append(
-                VenueListItem(
-                    id=UUID(mv["id"]),
-                    name=mv["name"],
-                    address=mv["address"],
-                    city=mv["city"],
-                    district=mv.get("district"),
-                    avg_rating=float(mv["avg_rating"]),
-                    total_bookings=int(mv["total_bookings"]),
-                    facilities=mv.get("facilities", {}),
-                    primary_image_url=mv.get("primary_image_url"),
-                    min_price=float(mv.get("min_price", 180000.0)),
-                )
-            )
-
     return items
 
 

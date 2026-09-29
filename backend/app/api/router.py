@@ -5,6 +5,7 @@ API Router — barcha sub-router'larni birlashtiruvchi bosh router.
 from fastapi import APIRouter
 
 from app.api.admin import router as admin_router
+from app.api.admin_auth import router as admin_auth_router
 from app.api.auth import router as auth_router
 from app.api.bookings import router as bookings_router
 from app.api.matches import router as matches_router
@@ -38,7 +39,8 @@ api_router.include_router(bookings_router, prefix="/bookings", tags=["Bookings"]
 # ─── Owner Management ────────────────────────
 api_router.include_router(owner_router, prefix="/owner", tags=["Owner Management"])
 
-# ─── Admin Dashboard ─────────────────────────
+# ─── Admin Auth & Dashboard ──────────────────
+api_router.include_router(admin_auth_router, prefix="/admin/auth", tags=["Admin Auth"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin Dashboard"])
 
 # ─── Solo Play Matches ───────────────────────

@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
+    # ─── SuperAdmin Authentication ───────────────
+    ADMIN_LOGIN: str = "admin_sportplus"
+    ADMIN_PASSWORD: str = "SizningKuchliParolingiz!2026"
+
     # ─── Eskiz SMS ────────────────────────────────
     ESKIZ_EMAIL: str = ""
     ESKIZ_PASSWORD: str = ""

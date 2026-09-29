@@ -168,6 +168,37 @@ def create_app() -> FastAPI:
             "environment": settings.APP_ENV,
         }
 
+    # ─── Static Fayllarni ulash (Rasmlar, uploads, admin) ──
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+
+    static_path = Path(__file__).resolve().parent / "static"
+    static_path.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+    admin_dir = static_path / "admin"
+    admin_index = admin_dir / "index.html"
+
+    # Admin Panel routes
+    @app.get("/admin", include_in_schema=False)
+    @app.get("/admin/", include_in_schema=False)
+    async def serve_admin_panel():
+        if admin_index.exists():
+            return FileResponse(str(admin_index), media_type="text/html")
+        return JSONResponse({"status": "ready", "message": "Admin paneli tayyorlanmoqda."})
+
+    # Fail-safe static routes for admin.css and admin.js
+    @app.get("/admin.css", include_in_schema=False)
+    @app.get("/admin/admin.css", include_in_schema=False)
+    async def serve_admin_css():
+        return FileResponse(str(admin_dir / "admin.css"), media_type="text/css")
+
+    @app.get("/admin.js", include_in_schema=False)
+    @app.get("/admin/admin.js", include_in_schema=False)
+    async def serve_admin_js():
+        return FileResponse(str(admin_dir / "admin.js"), media_type="text/javascript")
+
     # ─── API Router'larni ulash ──────────────
     from app.api.router import api_router
 
