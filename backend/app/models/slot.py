@@ -1,6 +1,7 @@
 """
 Slot ORM Model.
 Bo'sh va band vaqtlar — har bir pitch uchun start_time va end_time.
+GiST EXCLUDE constraint bilan overlapping time range'lar database darajasida bloklangan.
 """
 
 import uuid
@@ -14,8 +15,9 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     ForeignKey,
+    text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ExcludeConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -62,6 +64,14 @@ class Slot(Base):
             name="valid_source",
         ),
         UniqueConstraint("pitch_id", "start_time", name="unique_pitch_slot"),
+        # GiST EXCLUDE: prevent overlapping time ranges on the same pitch
+        # Requires: CREATE EXTENSION IF NOT EXISTS btree_gist;
+        ExcludeConstraint(
+            ("pitch_id", "="),
+            (text("tstzrange(start_time, end_time)"), "&&"),
+            name="no_overlapping_slots",
+            using="gist",
+        ),
     )
 
     def __repr__(self):

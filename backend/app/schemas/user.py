@@ -31,6 +31,7 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     """Foydalanuvchi javob modeli."""
     id: Any
+    telegram_id: Optional[int] = None
     phone_number: Optional[str] = None
     full_name: str
     first_name: Optional[str] = None

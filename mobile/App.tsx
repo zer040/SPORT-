@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from './constants/theme';
@@ -94,9 +95,38 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
 
+  // Device UUID generation and persistent storage
+  const getDeviceUuid = () => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      let savedId = window.localStorage.getItem('sportplus_device_uuid');
+      if (!savedId) {
+        savedId = 'dev-' + Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+        window.localStorage.setItem('sportplus_device_uuid', savedId);
+      }
+      return savedId;
+    }
+    return 'dev-client-' + Math.random().toString(36).substring(2, 10);
+  };
+
   useEffect(() => {
     loadInitialData();
-  }, []);
+
+    // 1. Unikal o'rnatishni serverga qayd etish (App Installation)
+    const deviceId = getDeviceUuid();
+    const plat = Platform.OS === 'web' ? 'web' : Platform.OS === 'ios' ? 'ios' : 'android';
+    Api.registerInstall(deviceId, plat, '1.0.0', `${Platform.OS.toUpperCase()}`).catch(() => {});
+
+    // 2. Real-vaqtdagi Heartbeat Ping (Har 45 soniyada Redis presence'ni yangilab turish)
+    const sendPing = () => {
+      const pingId = user?.id || (user?.telegram_id ? `tg_${user.telegram_id}` : deviceId);
+      Api.sendHeartbeat(String(pingId)).catch(() => {});
+    };
+
+    sendPing(); // Darhol dastlabki ping
+    const pingInterval = setInterval(sendPing, 45000); // Har 45s da yengil ping
+
+    return () => clearInterval(pingInterval);
+  }, [user?.id, user?.telegram_id]);
 
   // 10-minute countdown timer for HELD bookings
   useEffect(() => {
@@ -190,26 +220,6 @@ export default function App() {
     }
   };
 
-  const handleSkipDev = () => {
-    const devUser = {
-      id: 'ac568e53-8dd6-421f-ae60-754e87371335',
-      phone_number: '+998901234567',
-      full_name: 'Alisher Karimov',
-      first_name: 'Alisher',
-      last_name: 'Karimov',
-      role: 'player',
-      rating: 4.9,
-    };
-    setToken('dev-demo-token');
-    setUser(devUser);
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        window.localStorage.setItem('sportplus_token', 'dev-demo-token');
-        window.localStorage.setItem('sportplus_user', JSON.stringify(devUser));
-      } catch {}
-    }
-    setShowWelcomeBack(true);
-  };
 
   const handleLogout = () => {
     setToken(null);
@@ -277,7 +287,7 @@ export default function App() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor={THEME.colors.background} />
-        <LoginScreen onLoginSuccess={handleLoginSuccess} onSkipDev={handleSkipDev} />
+        <LoginScreen onLoginSuccess={handleLoginSuccess} />
       </SafeAreaView>
     );
   }
@@ -550,34 +560,11 @@ export default function App() {
               ))}
             </View>
 
-            {/* Role Switcher for Test / Demo */}
-            <TouchableOpacity
-              style={styles.roleSwitchBtn}
-              onPress={() => {
-                const nextRole = user?.role === 'owner' ? 'player' : 'owner';
-                setUser({ ...user, role: nextRole });
-              }}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="swap-horizontal" size={16} color={THEME.colors.primary} />
-              <Text style={styles.roleSwitchText}>
-                {user?.role === 'owner'
-                  ? "O'yinchi (Player) rejimiga o'tish"
-                  : "Maydon Egasi (Owner) rejimini yoqish"}
-              </Text>
-            </TouchableOpacity>
-
             {/* Logout Button */}
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
               <Ionicons name="log-out-outline" size={18} color={THEME.colors.danger} />
               <Text style={styles.logoutText}>Akkountdan chiqish (Logout)</Text>
             </TouchableOpacity>
-
-            {/* Backend URL info */}
-            <View style={styles.devCard}>
-              <Text style={styles.devLabel}>API Host Connection:</Text>
-              <Text style={styles.devValue}>{BASE_URL}</Text>
-            </View>
           </View>
         )}
 

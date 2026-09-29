@@ -74,3 +74,31 @@ def get_cached_user_by_id(user_id: str) -> Optional[Dict[str, Any]]:
     """Foydalanuvchi ID bo'yicha keshdan topish."""
     users = _read_users()
     return users.get(f"id:{user_id}")
+
+
+def list_cached_users() -> list[Dict[str, Any]]:
+    """Barcha keshdagi foydalanuvchilar ro'yxati (takrorlanishlarsiz)."""
+    users = _read_users()
+    seen_ids = set()
+    result = []
+    for key, val in users.items():
+        if key.startswith("id:") and isinstance(val, dict):
+            uid = val.get("id")
+            if uid not in seen_ids:
+                seen_ids.add(uid)
+                result.append(val)
+    return result
+
+
+def update_cached_user_role(user_id: str, new_role: str) -> bool:
+    """Keshdagi foydalanuvchi rolini yangilash."""
+    users = _read_users()
+    user = users.get(f"id:{user_id}")
+    if not user:
+        clean_tg = user_id.replace("tg_", "")
+        user = users.get(f"tg:{clean_tg}")
+    if user:
+        user["role"] = new_role
+        _write_users(users)
+        return True
+    return False

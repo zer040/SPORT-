@@ -41,6 +41,11 @@ api_router.include_router(owner_router, prefix="/owner", tags=["Owner Management
 # ─── Admin Dashboard ─────────────────────────
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin Dashboard"])
 
+# ─── Analytics & Live Metrics (Real-Time Redis & DB) ─────────
+from app.api.analytics import router as analytics_router
+api_router.include_router(analytics_router, prefix="/analytics", tags=["Analytics"])
+api_router.include_router(analytics_router, prefix="/admin/analytics", tags=["Admin Real Analytics"])
+
 # ─── Solo Play Matches ───────────────────────
 api_router.include_router(matches_router, prefix="/matches", tags=["Solo Play Matches"])
 

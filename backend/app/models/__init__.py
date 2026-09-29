@@ -24,6 +24,9 @@ from app.models.escrow_payment import EscrowPayment
 # Gamification modellari
 from app.models.badge import Badge, UserBadge
 
+# Analytics modellari
+from app.models.analytics import AppInstallation, UserActivityLog
+
 __all__ = [
     "User",
     "Venue",
@@ -44,4 +47,6 @@ __all__ = [
     "EscrowPayment",
     "Badge",
     "UserBadge",
+    "AppInstallation",
+    "UserActivityLog",
 ]
