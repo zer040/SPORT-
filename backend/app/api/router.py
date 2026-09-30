@@ -65,6 +65,7 @@ from typing import Dict, Any
 from app.services.telegram_bot import process_telegram_update
 
 @api_router.post("/telegram-webhook", summary="Telegram Webhook update qabul qilish", tags=["Telegram Bot"])
+@api_router.post("/telegram/webhook", summary="Telegram Webhook update qabul qilish (muqobil)", tags=["Telegram Bot"])
 async def telegram_webhook_handler(update: Dict[str, Any]):
     """Telegram serveridan kelgan yangilanishni dp.feed_update orqali qayta ishlash"""
     await process_telegram_update(update)

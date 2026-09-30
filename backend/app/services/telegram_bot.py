@@ -52,23 +52,12 @@ async def handle_start(message: types.Message, command: CommandObject):
         f"<b>Sport+</b> ilovasiga kirish uchun tasdiqlash kodingiz:\n\n"
         f"🔑 <code>{otp_code}</code>\n\n"
         f"<i>(Kodni nusxalash uchun ustiga bir marta bosing)</i>\n\n"
-        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n"
-        f"Ilovaga qaytib ushbu kodni kiriting yoki quyidagi tugmani bosing:"
-    )
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="⚡ Ilovaga o'tish (1-tap)",
-                    url=f"sportplus://auth?code={otp_code}",
-                )
-            ]
-        ]
+        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n\n"
+        f"Ilovaga qaytib, ushbu kodni kiriting."
     )
 
     try:
-        await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
+        await message.answer(text, parse_mode="HTML")
     except Exception as err:
         logger.error(f"Telegramga xabar yuborishda xatolik: {err}")
 
@@ -85,23 +74,12 @@ async def handle_any_message(message: types.Message):
         f"<b>Sport+</b> ilovasiga kirish uchun tasdiqlash kodingiz:\n\n"
         f"🔑 <code>{otp_code}</code>\n\n"
         f"<i>(Kodni nusxalash uchun ustiga bir marta bosing)</i>\n\n"
-        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n"
-        f"Ilovaga qaytib ushbu kodni kiriting yoki quyidagi tugmani bosing:"
-    )
-
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="⚡ Ilovaga o'tish (1-tap)",
-                    url=f"sportplus://auth?code={otp_code}",
-                )
-            ]
-        ]
+        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n\n"
+        f"Ilovaga qaytib, ushbu kodni kiriting."
     )
 
     try:
-        await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
+        await message.answer(text, parse_mode="HTML")
     except Exception as err:
         logger.error(f"Telegramga xabar yuborishda xatolik: {err}")
 
