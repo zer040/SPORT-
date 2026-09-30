@@ -13,12 +13,12 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange, bookingCount = 0, isOwner = false }) => {
-  const tabs: { key: TabKey; label: string; iconName: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'venues', label: 'Maydonlar', iconName: 'grid' },
-    { key: 'solo', label: 'Solo Play', iconName: 'football' },
-    { key: 'bookings', label: 'Bronlar', iconName: 'ticket' },
-    ...(isOwner ? [{ key: 'owner' as TabKey, label: 'Boshqaruv', iconName: 'shield-checkmark' as keyof typeof Ionicons.glyphMap }] : []),
-    { key: 'profile', label: 'Profil', iconName: 'person' },
+  const tabs: { key: TabKey; label: string; iconName: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap }[] = [
+    { key: 'venues', label: 'Maydonlar', iconName: 'grid-outline', activeIcon: 'grid' },
+    { key: 'solo', label: 'Solo Play', iconName: 'football-outline', activeIcon: 'football' },
+    { key: 'bookings', label: 'Bronlar', iconName: 'ticket-outline', activeIcon: 'ticket' },
+    ...(isOwner ? [{ key: 'owner' as TabKey, label: 'Boshqaruv', iconName: 'shield-outline' as keyof typeof Ionicons.glyphMap, activeIcon: 'shield-checkmark' as keyof typeof Ionicons.glyphMap }] : []),
+    { key: 'profile', label: 'Profil', iconName: 'person-outline', activeIcon: 'person' },
   ];
 
   return (
@@ -31,11 +31,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onTabChange, b
               key={tab.key}
               style={[styles.tabButton, isActive && styles.activeTabButton]}
               onPress={() => onTabChange(tab.key)}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
               <Ionicons
-                name={tab.iconName}
-                size={20}
+                name={isActive ? tab.activeIcon : tab.iconName}
+                size={22}
                 color={isActive ? THEME.colors.primary : THEME.colors.textMuted}
               />
               <Text style={[styles.label, isActive && styles.activeLabel]}>{tab.label}</Text>
@@ -59,50 +59,49 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: THEME.spacing.md,
-    paddingBottom: 22,
-    backgroundColor: 'transparent',
+    backgroundColor: THEME.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 8,
   },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(17, 23, 38, 0.96)',
-    borderRadius: THEME.radius.full,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: 8,
+    paddingBottom: 26,  // safe area bottom
+    paddingHorizontal: 4,
     justifyContent: 'space-around',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 12,
   },
   tabButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: THEME.radius.full,
+    paddingHorizontal: 4,
+    borderRadius: THEME.radius.md,
     position: 'relative',
     gap: 3,
   },
   activeTabButton: {
-    backgroundColor: 'rgba(0, 255, 135, 0.12)',
+    // Subtle green tint pill around active icon
   },
   label: {
     fontSize: 10,
     color: THEME.colors.textMuted,
-    fontWeight: '700',
+    fontWeight: '600',
+    marginTop: 1,
   },
   activeLabel: {
     color: THEME.colors.primary,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   badge: {
     position: 'absolute',
     top: 2,
-    right: 12,
+    right: 10,
     backgroundColor: THEME.colors.danger,
     minWidth: 16,
     height: 16,
@@ -110,6 +109,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: THEME.colors.surface,
   },
   badgeText: {
     color: '#fff',

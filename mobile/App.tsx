@@ -286,7 +286,7 @@ export default function App() {
   if (!token) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={THEME.colors.background} />
+        <StatusBar barStyle="dark-content" backgroundColor={THEME.colors.surface} />
         <LoginScreen onLoginSuccess={handleLoginSuccess} />
       </SafeAreaView>
     );
@@ -294,7 +294,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={THEME.colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={THEME.colors.surface} />
 
       {/* Header with User Karma & Avatar */}
       <Header
@@ -315,7 +315,6 @@ export default function App() {
           <View>
             <View style={styles.tabHero}>
               <Text style={styles.heroTitle}>Futbol Maydonlari</Text>
-              <Text style={styles.heroSubtitle}>Toshkent va Jizzax bo'yicha jonli band qilish</Text>
             </View>
 
             {/* Filter Pills */}
@@ -345,7 +344,7 @@ export default function App() {
               <View style={styles.emptyState}>
                 <Ionicons name="search-outline" size={32} color={THEME.colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyTitle}>Maydonlar topilmadi</Text>
-                <Text style={styles.emptySubtitle}>Backend va PostGIS bilan aloqa tekshirilmoqda...</Text>
+                <Text style={styles.emptySubtitle}>Atrofingizda maydonlar topilmadi</Text>
               </View>
             ) : (
               venues.map((v) => <VenueCard key={v.id} venue={v} onSelect={handleVenueSelect} />)
@@ -357,8 +356,7 @@ export default function App() {
         {currentTab === 'solo' && (
           <View>
             <View style={styles.tabHero}>
-              <Text style={styles.heroTitle}>Solo Play & Matchmaking</Text>
-              <Text style={styles.heroSubtitle}>Yakka o'yinchilar va ochiq tarkiblar ligasi</Text>
+              <Text style={styles.heroTitle}>Solo Play</Text>
             </View>
 
             <RadarScanner
@@ -390,7 +388,6 @@ export default function App() {
           <View>
             <View style={styles.tabHero}>
               <Text style={styles.heroTitle}>Mening Bronlarim</Text>
-              <Text style={styles.heroSubtitle}>Match Pass va faol band qilingan slotlar</Text>
             </View>
 
             {/* Active HELD Booking with 10-min Countdown */}
@@ -503,17 +500,17 @@ export default function App() {
               {/* Ism & Familiya Tafsilotlari */}
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {user?.first_name ? (
-                  <View style={{ backgroundColor: 'rgba(0, 255, 135, 0.12)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0, 255, 135, 0.3)' }}>
+                  <View style={{ backgroundColor: THEME.colors.primaryBg, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: THEME.colors.surfaceBorderActive }}>
                     <Text style={{ color: THEME.colors.primary, fontSize: 12, fontWeight: '700' }}>Ism: {user.first_name}</Text>
                   </View>
                 ) : null}
                 {user?.last_name ? (
-                  <View style={{ backgroundColor: 'rgba(0, 240, 255, 0.12)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0, 240, 255, 0.3)' }}>
-                    <Text style={{ color: THEME.colors.accent, fontSize: 12, fontWeight: '700' }}>Familiya: {user.last_name}</Text>
+                  <View style={{ backgroundColor: 'rgba(14, 165, 233, 0.08)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(14, 165, 233, 0.25)' }}>
+                    <Text style={{ color: THEME.colors.electricBlue, fontSize: 12, fontWeight: '700' }}>Familiya: {user.last_name}</Text>
                   </View>
                 ) : null}
-                <View style={{ backgroundColor: 'rgba(255, 255, 255, 0.06)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.12)' }}>
-                  <Text style={{ color: THEME.colors.textMuted, fontSize: 12, fontWeight: '700' }}>
+                <View style={{ backgroundColor: THEME.colors.surfaceLight, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: THEME.colors.border }}>
+                  <Text style={{ color: THEME.colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
                     {user?.role === 'owner' ? '👑 Maydon Egasi' : '⚽ O\'yinchi'}
                   </Text>
                 </View>
@@ -625,18 +622,18 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   contentContainer: {
-    paddingBottom: 110,
+    paddingBottom: 120,
   },
   tabHero: {
     paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.md,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   heroTitle: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
     color: THEME.colors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   heroSubtitle: {
     fontSize: 13,
@@ -649,12 +646,17 @@ const styles = StyleSheet.create({
   },
   filterPill: {
     backgroundColor: THEME.colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: THEME.radius.full,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   activeFilterPill: {
     backgroundColor: THEME.colors.primary,
@@ -663,11 +665,11 @@ const styles = StyleSheet.create({
   filterPillText: {
     color: THEME.colors.textSecondary,
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   activeFilterText: {
-    color: THEME.colors.textDark,
-    fontWeight: '900',
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -678,8 +680,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: THEME.colors.textPrimary,
     paddingHorizontal: THEME.spacing.md,
     marginTop: 4,
@@ -696,8 +698,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: THEME.colors.textPrimary,
     marginBottom: 4,
   },
@@ -791,8 +793,13 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radius.lg,
     padding: 16,
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   passTop: {
     flexDirection: 'row',
@@ -806,10 +813,10 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   passSportLogo: {
-    color: THEME.colors.accent,
-    fontWeight: '900',
+    color: THEME.colors.primary,
+    fontWeight: '800',
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   confirmedBadge: {
     flexDirection: 'row',
@@ -837,12 +844,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   qrMock: {
-    backgroundColor: THEME.colors.surfaceElevated,
+    backgroundColor: THEME.colors.surfaceLight,
     borderRadius: THEME.radius.md,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(0, 255, 135, 0.2)',
+    borderColor: THEME.colors.surfaceBorderActive,
   },
   qrCodeText: {
     color: THEME.colors.primary,
@@ -862,9 +869,14 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
     marginTop: 10,
     marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileAvatarLarge: {
     width: 64,
@@ -891,13 +903,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   karmaBox: {
-    backgroundColor: 'rgba(204, 255, 0, 0.08)',
+    backgroundColor: THEME.colors.primaryBg,
     borderRadius: THEME.radius.md,
     padding: 14,
     width: '100%',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(204, 255, 0, 0.2)',
+    borderColor: THEME.colors.surfaceBorderActive,
   },
   karmaLabel: {
     fontSize: 11,
@@ -908,7 +920,7 @@ const styles = StyleSheet.create({
   karmaBigScore: {
     fontSize: 28,
     fontWeight: '900',
-    color: THEME.colors.accent,
+    color: THEME.colors.primary,
     marginVertical: 2,
   },
   karmaNote: {
@@ -929,7 +941,12 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   statNum: {
     fontSize: 20,
@@ -954,13 +971,19 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   badgeCardTitle: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     color: THEME.colors.textPrimary,
     textAlign: 'center',
+    numberOfLines: 1,
   },
   badgeCardDesc: {
     fontSize: 9,

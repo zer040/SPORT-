@@ -18,19 +18,21 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.brandRow}>
-        <View style={styles.logoBadge}>
-          <Ionicons name="football" size={20} color={THEME.colors.primary} />
-          <Text style={styles.logoText}>SPORT<Text style={styles.plusSign}>+</Text></Text>
+      {/* Brand Logo only — no subtitle clutter */}
+      <View style={styles.logoBadge}>
+        <View style={styles.logoIcon}>
+          <Ionicons name="football" size={18} color={THEME.colors.primary} />
         </View>
-        <Text style={styles.subtitle}>Toshkent & Jizzax Futbol Ekotizimi</Text>
+        <Text style={styles.logoText}>
+          SPORT<Text style={styles.plusSign}>+</Text>
+        </Text>
       </View>
 
       <View style={styles.actionsRow}>
         {user ? (
           <TouchableOpacity style={styles.profileBadge} onPress={onProfilePress} activeOpacity={0.8}>
             <View style={styles.karmaChip}>
-              <Ionicons name="shield-checkmark" size={13} color={THEME.colors.accent} />
+              <Ionicons name="shield-checkmark" size={12} color={THEME.colors.primary} />
               <Text style={styles.karmaText}>{reliabilityScore.toFixed(0)}%</Text>
             </View>
             <View style={styles.avatarCircle}>
@@ -45,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.loginChip} onPress={onProfilePress} activeOpacity={0.8}>
-            <Ionicons name="log-in-outline" size={16} color={THEME.colors.textDark} />
+            <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
             <Text style={styles.loginText}>Kirish</Text>
           </TouchableOpacity>
         )}
@@ -60,36 +62,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: THEME.spacing.md,
-    paddingTop: 12,
-    paddingBottom: 14,
-    backgroundColor: THEME.colors.background,
+    paddingTop: 10,
+    paddingBottom: 12,
+    backgroundColor: THEME.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  brandRow: {
-    flexDirection: 'column',
+    borderBottomColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   logoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+  },
+  logoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: THEME.colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
     color: THEME.colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   plusSign: {
     color: THEME.colors.primary,
-  },
-  subtitle: {
-    fontSize: 10,
-    color: THEME.colors.textMuted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -105,32 +109,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(204, 255, 0, 0.1)',
+    backgroundColor: THEME.colors.primaryBg,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: THEME.radius.full,
     borderWidth: 1,
-    borderColor: 'rgba(204, 255, 0, 0.25)',
+    borderColor: THEME.colors.surfaceBorderActive,
   },
   karmaText: {
     fontSize: 11,
     fontWeight: '900',
-    color: THEME.colors.accent,
+    color: THEME.colors.primary,
   },
   avatarCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: THEME.colors.surfaceElevated,
-    borderWidth: 1.5,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: THEME.colors.primaryMuted,
+    borderWidth: 2,
     borderColor: THEME.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    color: THEME.colors.textPrimary,
+    color: THEME.colors.primary,
     fontWeight: '800',
-    fontSize: 15,
+    fontSize: 14,
   },
   loginChip: {
     flexDirection: 'row',
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radius.full,
   },
   loginText: {
-    color: THEME.colors.textDark,
+    color: '#FFFFFF',
     fontWeight: '900',
     fontSize: 12,
   },

@@ -73,7 +73,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: THEME.colors.surfaceBorder,
+    borderColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   radarVisual: {
     marginRight: 12,
@@ -82,18 +87,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: THEME.colors.surfaceLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pulseActive: {
-    backgroundColor: 'rgba(0, 255, 135, 0.15)',
+    backgroundColor: THEME.colors.primaryBg,
   },
   pulseInner: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: THEME.colors.surfaceElevated,
+    backgroundColor: THEME.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -125,16 +130,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   toggleBtnInactive: {
-    backgroundColor: THEME.colors.accent,
+    backgroundColor: THEME.colors.primary,
   },
   toggleText: {
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: '800',
   },
   toggleTextActive: {
     color: THEME.colors.danger,
   },
   toggleTextInactive: {
-    color: THEME.colors.textDark,
+    color: '#FFFFFF',
   },
 });

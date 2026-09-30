@@ -1,96 +1,98 @@
 /**
- * Sport+ Frosted Glassmorphism Design Tokens.
- * Clean Light/Dark theme with zero-clutter aesthetic.
+ * Sport+ Apple-iOS Clean Light Mode Design Tokens.
+ * Minimalist, clean, premium aesthetic — no dark surfaces.
  */
 
 export const THEME = {
   colors: {
-    // ─── Primary Pitch Accent ──────────────────
-    primary: '#00FF87',       // Neon Turf Green
-    primaryDark: '#059669',
-    primaryLight: '#5EEAD4',
-    primaryMuted: 'rgba(0, 255, 135, 0.12)',
+    // ─── Brand / Accent ───────────────────────────────
+    primary: '#059669',        // Emerald green (iOS-safe on white)
+    primaryDark: '#047857',    // Darker emerald for pressed states
+    primaryLight: '#34D399',   // Soft mint
+    primaryMuted: 'rgba(5, 150, 105, 0.10)',
+    primaryBg: 'rgba(5, 150, 105, 0.08)',
 
-    // ─── Electric Blue (Solo Play & Escrow) ────
-    electricBlue: '#38BDF8',
-    electricBlueMuted: 'rgba(56, 189, 248, 0.12)',
-    secondary: '#38BDF8',
+    // ─── Secondary (blue tones for solo/escrow) ───────
+    electricBlue: '#0EA5E9',
+    electricBlueMuted: 'rgba(14, 165, 233, 0.10)',
+    secondary: '#0EA5E9',
 
-    // ─── Dynamic Electric Volt ──────────────────
-    accent: '#CCFF00',
-    accentMuted: 'rgba(204, 255, 0, 0.12)',
+    // ─── Accent (gold / amber highlights) ─────────────
+    accent: '#F59E0B',
+    accentMuted: 'rgba(245, 158, 11, 0.10)',
 
-    // ─── Deep Midnight (Dark Mode) ─────────────
-    background: '#090D16',
-    surface: '#111726',
-    surfaceLight: '#1A2338',
-    surfaceGlass: 'rgba(255, 255, 255, 0.04)',
-    surfaceElevated: '#1A2338',
-    border: 'rgba(255, 255, 255, 0.08)',
-    surfaceBorder: 'rgba(255, 255, 255, 0.08)',
-    surfaceBorderActive: 'rgba(0, 255, 135, 0.3)',
+    // ─── Light Mode Surfaces ──────────────────────────
+    background: '#F1F5F9',      // Cool off-white (not pure white)
+    surface: '#FFFFFF',         // Card surface
+    surfaceLight: '#F8FAFC',    // Secondary surface
+    surfaceGlass: 'rgba(255, 255, 255, 0.80)',
+    surfaceElevated: '#FFFFFF',
+    border: 'rgba(15, 23, 42, 0.08)',
+    surfaceBorder: 'rgba(15, 23, 42, 0.08)',
+    surfaceBorderActive: 'rgba(5, 150, 105, 0.35)',
 
-    // ─── Frosted Glass (Light Mode per Spec) ───
-    glassBg: 'rgba(255, 255, 255, 0.45)',
-    glassBorder: 'rgba(255, 255, 255, 0.65)',
-    glassOverlay: 'rgba(255, 255, 255, 0.08)',
+    // ─── Glass ─────────────────────────────────────────
+    glassBg: 'rgba(255, 255, 255, 0.75)',
+    glassBorder: 'rgba(255, 255, 255, 0.90)',
+    glassOverlay: 'rgba(255, 255, 255, 0.50)',
 
-    // ─── Dark CTA Button (Spec: #1E232B) ───────
-    ctaBackground: '#1E232B',
+    // ─── CTA Button ────────────────────────────────────
+    ctaBackground: '#0F172A',
     ctaText: '#FFFFFF',
 
-    // ─── Status Colors ─────────────────────────
+    // ─── Status ────────────────────────────────────────
     danger: '#EF4444',
     warning: '#F59E0B',
-    success: '#00FF87',
-    info: '#38BDF8',
+    success: '#059669',
+    info: '#0EA5E9',
 
-    // ─── Typography ────────────────────────────
-    textPrimary: '#FFFFFF',
-    textSecondary: '#94A3B8',
-    textMuted: '#64748B',
-    textDark: '#090D16',
+    // ─── Typography ────────────────────────────────────
+    textPrimary: '#0F172A',     // Deep slate — headings
+    textSecondary: '#475569',   // Mid slate — subtitles
+    textMuted: '#94A3B8',       // Light slate — captions
+    textDark: '#0F172A',
+    textOnGreen: '#FFFFFF',     // Text on primary green bg
 
-    // ─── Light Mode Typography ─────────────────
-    textLightPrimary: '#1E232B',
-    textLightSecondary: '#64748B',
+    // ─── Light Mode Typography (alias) ─────────────────
+    textLightPrimary: '#0F172A',
+    textLightSecondary: '#475569',
     textLightMuted: '#94A3B8',
 
-    // ─── Overlays ──────────────────────────────
-    overlay: 'rgba(9, 13, 22, 0.85)',
-    overlayLight: 'rgba(0, 0, 0, 0.05)',
-    gold: '#FBBF24',
+    // ─── Overlays ──────────────────────────────────────
+    overlay: 'rgba(15, 23, 42, 0.55)',
+    overlayLight: 'rgba(0, 0, 0, 0.04)',
+    gold: '#F59E0B',
   },
 
-  // ─── Frosted Glass Surface Specs ───────────────
+  // ─── Card Shadow Spec ──────────────────────────────────
   glass: {
-    background: 'rgba(255, 255, 255, 0.45)',
-    borderColor: 'rgba(255, 255, 255, 0.65)',
-    borderWidth: 1.5,
-    borderRadius: 32,
-    blurIntensity: 30,    // sigmaX/sigmaY for BackdropFilter
-    shadowColor: 'rgba(0, 0, 0, 0.08)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 12,
+    background: 'rgba(255, 255, 255, 0.75)',
+    borderColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1,
+    borderRadius: 20,
+    blurIntensity: 20,
+    shadowColor: 'rgba(0, 0, 0, 0.06)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
 
-  // ─── OTP Cell Specs ────────────────────────────
+  // ─── OTP Cell Specs ────────────────────────────────────
   otp: {
-    emptyBorder: 'rgba(255, 255, 255, 0.25)',
-    focusBorder: '#00FF87',       // Emerald
-    errorBorder: '#EF4444',       // Crimson
+    emptyBorder: 'rgba(15, 23, 42, 0.15)',
+    focusBorder: '#059669',
+    errorBorder: '#EF4444',
     cellSize: 52,
     cellGap: 12,
     borderRadius: 16,
     fontSize: 24,
   },
 
-  // ─── CTA Button Specs ─────────────────────────
+  // ─── CTA Button Specs ─────────────────────────────────
   cta: {
-    background: '#1E232B',        // Dark slate
-    borderRadius: 28,             // Pill radius
+    background: '#0F172A',
+    borderRadius: 28,
     paddingVertical: 18,
     paddingHorizontal: 32,
     textColor: '#FFFFFF',
@@ -111,14 +113,14 @@ export const THEME = {
     xs: 6,
     sm: 10,
     md: 16,
-    lg: 24,
-    xl: 32,
+    lg: 20,
+    xl: 28,
     full: 9999,
   },
 
-  // ─── Ambient Gradient Background ──────────────
+  // ─── Ambient Gradient Background ──────────────────────
   gradients: {
-    loginBg: ['#E8F4F8', '#F0E6F6', '#E8F4F0'],  // Soft pastel ambient
-    darkBg: ['#090D16', '#0F1628', '#090D16'],
+    loginBg: ['#E8F4F8', '#F0E6F6', '#E8F4F0'],
+    darkBg: ['#F1F5F9', '#E2E8F0', '#F1F5F9'],
   },
 };
