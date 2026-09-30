@@ -1,5 +1,4 @@
 """
-"""
 Admin API Endpoints — Sport+ Boshqaruv Markazi.
 
 Admin huquqiga ega foydalanuvchilar uchun to'liq boshqaruv paneli:
@@ -10,10 +9,6 @@ Admin huquqiga ega foydalanuvchilar uchun to'liq boshqaruv paneli:
 - Tezkor Harakatlar (cache flush, match cleanup)
 """
 
-"""
-
-import csv
-import io
 import csv
 import io
 import json
@@ -68,18 +63,9 @@ from app.models.booking import Booking
 from app.models.payment import Payment
 from app.models.pitch import Pitch
 from app.models.public_match import PublicMatch
-from app.models.user import User
-from app.models.venue import Venue, VenueImage
-
-from app.models.booking import Booking
-from app.models.payment import Payment
-from app.models.pitch import Pitch
-from app.models.slot import Slot
-from app.models.public_match import PublicMatch
 from app.models.slot import Slot
 from app.models.user import User
 from app.models.venue import Venue, VenueImage
-from app.schemas.admin import (
 from app.schemas.admin import (
     AdminPitchInput,
     AdminPitchItem,
@@ -1106,11 +1092,6 @@ async def clean_unfilled_matches(
     summary="Foydalanuvchi rolini o'zgartirish (USER, OWNER, ADMIN)",
 )
 async def update_user_role(
-@router.patch(
-    "/users/{user_id}/role",
-    summary="Foydalanuvchi rolini o'zgartirish (USER, OWNER, ADMIN)",
-)
-async def update_user_role_compat(
     user_id: str,
     payload: UserRoleUpdateRequest,
     db: AsyncSession = Depends(get_db),
@@ -1150,8 +1131,6 @@ async def update_user_role_compat(
         "message": f"Foydalanuvchi roli {role_norm} ga o'zgartirildi",
         "user_id": user_id,
         "new_role": role_norm,
-    }
-
     }
 
 

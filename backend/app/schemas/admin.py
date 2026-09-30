@@ -1,5 +1,4 @@
 """
-"""
 Admin Pydantic Schemas.
 Boshqaruv paneli uchun so'rov va javob modellari.
 """
