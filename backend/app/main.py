@@ -30,13 +30,16 @@ async def lifespan(app: FastAPI):
     """Application startup va shutdown hodisalari."""
     logger.info("🚀 Sport+ backend ishga tushmoqda...")
 
-    # Development rejimida jadvallarni yaratish
-    if settings.APP_ENV == "development":
-        try:
-            await init_db()
-            logger.info("✅ Database jadvallar yaratildi (development mode)")
-        except Exception as e:
-            logger.warning(f"⚠️ Database ulanmadi ({e}). Docker/PostgreSQL yoqilganligini tekshiring.")
+    # Database initialization (PostGIS extension va jadvallar)
+    try:
+        from sqlalchemy import text
+        from app.core.database import engine, Base
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ PostGIS extension va Database jadvallari muvaffaqiyatli tekshirildi/yaratildi")
+    except Exception as e:
+        logger.warning(f"⚠️ Database ulanmadi yoki jadvallar yaratishda xatolik ({e}). Docker/PostgreSQL sozlamalarini tekshiring.")
 
     # ─── Telegram Bot Integratsiyasi (Webhook -> Polling fallback) ───
     bot_task = None

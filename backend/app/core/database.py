@@ -63,8 +63,13 @@ async def get_db():
 
 
 async def init_db():
-    """Create all tables (faqat development uchun, production'da Alembic ishlatiladi)."""
+    """Create all tables va PostGIS extension."""
+    from sqlalchemy import text
     async with engine.begin() as conn:
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+        except Exception:
+            pass
         await conn.run_sync(Base.metadata.create_all)
 
 
