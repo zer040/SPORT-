@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 // Local Wi-Fi IP and Android Emulator IP
-const WI_FI_HOST = '172.20.10.2:8000';
+const WI_FI_HOST = '192.168.137.1:8000';
 const ANDROID_EMULATOR_HOST = '10.0.2.2:8000';
 const LOCALHOST = 'localhost:8000';
 
@@ -18,6 +18,7 @@ export const getBaseUrl = (): string => {
 };
 
 export const BASE_URL = getBaseUrl();
+export const API_URL = BASE_URL;
 
 // Generic fetcher
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}, token?: string | null): Promise<T> {
