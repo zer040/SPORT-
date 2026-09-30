@@ -326,4 +326,24 @@ export const Api = {
   async getNearbyPlayers(lat = 41.2858, lon = 69.2163, token: string) {
     return apiFetch<any[]>(`/solo-profile/nearby?lat=${lat}&lon=${lon}&radius_km=15`, { method: 'GET' }, token);
   },
+
+  // ─── Analytics & Presence ─────────────────────────────────
+  async sendHeartbeat(userIdOrDeviceId: string = 'guest_anonymous') {
+    return apiFetch<{ status: string }>('/analytics/ping', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userIdOrDeviceId }),
+    });
+  },
+
+  async registerInstall(deviceUuid: string, platform: string, appVersion: string = '1.0.0', osVersion?: string) {
+    return apiFetch<{ status: string }>('/analytics/install', {
+      method: 'POST',
+      body: JSON.stringify({
+        device_uuid: deviceUuid,
+        platform,
+        app_version: appVersion,
+        os_version: osVersion,
+      }),
+    });
+  },
 };

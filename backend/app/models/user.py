@@ -35,6 +35,8 @@ class User(Base):
         String(20), unique=True, nullable=True, index=True
     )
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    first_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(50), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     role: Mapped[str] = mapped_column(
         String(20), nullable=False, default="player", index=True
@@ -47,7 +49,7 @@ class User(Base):
     is_profile_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     has_seen_tutorial: Mapped[bool] = mapped_column(Boolean, default=False)
     telegram_chat_id: Mapped[int | None] = mapped_column(
-        Integer, nullable=True
+        BigInteger, nullable=True
     )
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

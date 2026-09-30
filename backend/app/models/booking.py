@@ -100,6 +100,14 @@ class Booking(Base):
         String(20), default="service_fee"
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    @property
+    def total_service_fee(self) -> float:
+        return float(self.service_fee) if self.service_fee is not None else 10000.0
+
+    @total_service_fee.setter
+    def total_service_fee(self, value: float) -> None:
+        self.service_fee = value
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

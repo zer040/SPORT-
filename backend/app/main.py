@@ -64,14 +64,15 @@ async def lifespan(app: FastAPI):
         # 2. Agar Webhook sozlanmagan bo'lsa yoki xatolik bersa -> Avtomatik Polling rejimiga o'tamiz
         if not webhook_success:
             logger.info("🤖 Telegram Webhook ishlamayapti yoki berilmagan. Polling rejimiga o'tilmoqda...")
-            try:
-                # Webhook qoldiqlarini tozalaymiz, aks holda Telegram server getUpdates ni rad etadi
-                await bot.delete_webhook(drop_pending_updates=True)
-                # Dispatcher pollingni alohida fon asyncio vazifasi sifatida ishga tushiramiz
-                bot_task = asyncio.create_task(dp.start_polling(bot))
-                logger.info("✅ Telegram Bot POLLING rejimida muvaffaqiyatli ishga tushirildi!")
-            except Exception as e:
-                logger.error(f"❌ Telegram Bot pollingni boshlashda xatolik: {e}")
+            async def _start_bot_background():
+                try:
+                    await asyncio.wait_for(bot.delete_webhook(drop_pending_updates=True), timeout=2.0)
+                    await dp.start_polling(bot)
+                    logger.info("✅ Telegram Bot POLLING rejimida muvaffaqiyatli ishga tushirildi!")
+                except Exception as e:
+                    logger.warning(f"⚠️ Telegram Bot fonida ulanish: {e}")
+
+            bot_task = asyncio.create_task(_start_bot_background())
 
     logger.info("✅ Sport+ backend tayyor!")
     yield

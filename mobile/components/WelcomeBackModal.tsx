@@ -104,30 +104,27 @@ export const WelcomeBackModal: React.FC<WelcomeBackModalProps> = ({
           {/* Frosted Glass Highlight Ring */}
           <View style={styles.topAccent} />
 
-          {/* Emoji */}
-          <Text style={styles.emoji}>👋</Text>
-
-          {/* Title */}
+          {/* Welcome Greeting */}
           <Text style={styles.title}>
-            Xush kelibsiz, {firstName || 'Foydalanuvchi'}!
+            Welcome Back, {firstName || 'Foydalanuvchi'}!
           </Text>
 
           {/* Subtitle */}
           <Text style={styles.subtitle}>
-            Bugungi o‘yinlar va maydonlar sizni kutmoqda.
+            Bugungi o'yinlar va maydonlar sizni kutmoqda.
           </Text>
 
-          {/* CTA Button */}
+          {/* CTA Button — Dark Slate per spec */}
           <TouchableOpacity
             style={styles.actionBtn}
             onPress={handleDismiss}
             activeOpacity={0.88}
           >
-            <Text style={styles.actionBtnText}>Davom etish (Maydonlar) →</Text>
+            <Text style={styles.actionBtnText}>Davom etish</Text>
           </TouchableOpacity>
 
           {/* Auto-closing hint */}
-          <Text style={styles.timerHint}>2.5 soniyada avtomatik o‘tiladi</Text>
+          <Text style={styles.timerHint}>2.5 soniyada avtomatik o'tiladi</Text>
         </Animated.View>
       </View>
     </Modal>
@@ -137,82 +134,79 @@ export const WelcomeBackModal: React.FC<WelcomeBackModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(5, 8, 15, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   cardContainer: {
     width: Math.min(340, Dimensions.get('window').width - 40),
-    backgroundColor: 'rgba(21, 28, 44, 0.94)',
-    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',  // Frosted glass per spec
+    borderRadius: 32,                               // Glass borderRadius per spec
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    paddingVertical: 32,
-    paddingHorizontal: 26,
+    borderColor: 'rgba(255, 255, 255, 0.65)',       // Glass border per spec
+    paddingVertical: 36,
+    paddingHorizontal: 28,
     alignItems: 'center',
-    shadowColor: '#00FF87',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 30,
-    elevation: 20,
+    shadowColor: 'rgba(0, 0, 0, 0.08)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 12,
     overflow: 'hidden',
     position: 'relative',
   },
   topAccent: {
     position: 'absolute',
     top: 0,
-    left: 40,
-    right: 40,
+    left: 50,
+    right: 50,
     height: 3,
     backgroundColor: THEME.colors.primary,
     borderRadius: 2,
     shadowColor: THEME.colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.6,
     shadowRadius: 10,
   },
-  emoji: {
-    fontSize: 42,
-    marginBottom: 14,
-  },
   title: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1E232B',
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: -0.3,
+    marginTop: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.65)',
+    color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: 26,
   },
   actionBtn: {
     width: '100%',
-    height: 50,
-    backgroundColor: '#00FF87',
-    borderRadius: 25,
+    height: 52,
+    backgroundColor: '#1E232B',    // Dark slate CTA per spec
+    borderRadius: 28,              // Pill radius per spec
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00FF87',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowColor: '#1E232B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
     elevation: 8,
   },
   actionBtnText: {
-    color: '#090D16',
-    fontSize: 15,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
   timerHint: {
     fontSize: 11,
-    color: 'rgba(255, 255, 255, 0.4)',
-    marginTop: 12,
+    color: '#94A3B8',
+    marginTop: 14,
   },
 });
