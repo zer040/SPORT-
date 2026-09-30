@@ -36,8 +36,9 @@ async def lifespan(app: FastAPI):
         from app.core.database import engine, Base
         async with engine.begin() as conn:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("✅ PostGIS extension va Database jadvallari muvaffaqiyatli tekshirildi/yaratildi")
+        logger.info("✅ PostGIS, btree_gist extension va Database jadvallari muvaffaqiyatli tekshirildi/yaratildi")
     except Exception as e:
         logger.warning(f"⚠️ Database ulanmadi yoki jadvallar yaratishda xatolik ({e}). Docker/PostgreSQL sozlamalarini tekshiring.")
 

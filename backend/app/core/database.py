@@ -63,11 +63,12 @@ async def get_db():
 
 
 async def init_db():
-    """Create all tables va PostGIS extension."""
+    """Create all tables, PostGIS va btree_gist extension."""
     from sqlalchemy import text
     async with engine.begin() as conn:
         try:
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
         except Exception:
             pass
         await conn.run_sync(Base.metadata.create_all)
