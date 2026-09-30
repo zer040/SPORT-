@@ -38,13 +38,13 @@ async def handle_start(message: types.Message, command: CommandObject):
     # 2. 6 xonali OTP kod yaratish
     otp_code = generate_otp(6)
     
-    # 3. Redis ga saqlash (Muddati: 120 soniya / 2 daqiqa)
+    # 3. Redis ga saqlash (Muddati: 300 soniya / 5 daqiqa)
     # Kalit: otp:<kod> -> Qiymat: telegram_id
-    await redis_client.setex(f"otp:{otp_code}", 120, str(telegram_id))
+    await redis_client.setex(f"otp:{otp_code}", 300, str(telegram_id))
     
     # Agar ilova session_id yuborgan bo'lsa, uni ham bog'lab qo'yamiz
     if session_id:
-        await redis_client.setex(f"session:{session_id}", 120, otp_code)
+        await redis_client.setex(f"session:{session_id}", 300, otp_code)
 
     # 4. Foydalanuvchiga xabar yuborish
     text = (
@@ -52,7 +52,7 @@ async def handle_start(message: types.Message, command: CommandObject):
         f"<b>Sport+</b> ilovasiga kirish uchun tasdiqlash kodingiz:\n\n"
         f"🔑 <code>{otp_code}</code>\n\n"
         f"<i>(Kodni nusxalash uchun ustiga bir marta bosing)</i>\n\n"
-        f"⏳ Ushbu kod <b>2 daqiqa</b> davomida amal qiladi.\n"
+        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n"
         f"Ilovaga qaytib ushbu kodni kiriting yoki quyidagi tugmani bosing:"
     )
 
@@ -78,14 +78,14 @@ async def handle_any_message(message: types.Message):
     telegram_id = message.from_user.id
     first_name = message.from_user.first_name or "Foydalanuvchi"
     otp_code = generate_otp(6)
-    await redis_client.setex(f"otp:{otp_code}", 120, str(telegram_id))
+    await redis_client.setex(f"otp:{otp_code}", 300, str(telegram_id))
 
     text = (
         f"Salom, <b>{first_name}</b>! 👋\n\n"
         f"<b>Sport+</b> ilovasiga kirish uchun tasdiqlash kodingiz:\n\n"
         f"🔑 <code>{otp_code}</code>\n\n"
         f"<i>(Kodni nusxalash uchun ustiga bir marta bosing)</i>\n\n"
-        f"⏳ Ushbu kod <b>2 daqiqa</b> davomida amal qiladi.\n"
+        f"⏳ Ushbu kod <b>5 daqiqa</b> davomida amal qiladi.\n"
         f"Ilovaga qaytib ushbu kodni kiriting yoki quyidagi tugmani bosing:"
     )
 

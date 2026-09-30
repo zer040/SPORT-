@@ -90,12 +90,6 @@ async def lifespan(app: FastAPI):
             await bot_task
         except (asyncio.CancelledError, Exception):
             pass
-    elif settings.TELEGRAM_WEBHOOK_URL:
-        try:
-            from app.services.telegram_bot import remove_bot_webhook
-            await remove_bot_webhook()
-        except Exception:
-            pass
 
     try:
         from app.services.telegram_bot import bot
