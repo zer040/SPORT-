@@ -5,8 +5,17 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../auth/presentation/login_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _notifications = true;
+  bool _ownerMode = false;
+  final String _walletBalance = '50,000';
 
   @override
   Widget build(BuildContext context) {
@@ -15,188 +24,260 @@ class ProfileScreen extends StatelessWidget {
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 120),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 130),
           child: Column(
             children: [
-              const SizedBox(height: 20),
-
-              // Avatar & Name
-              Container(
-                width: 84,
-                height: 84,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryLight, AppTheme.primary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    'JD',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Jasur Davronov',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                '+998 90 123 45 67',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Karma / Reliability Badge Card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: GlassContainer(
-                  borderRadius: 22,
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 58,
-                            height: 58,
-                            child: CircularProgressIndicator(
-                              value: 0.98,
-                              strokeWidth: 5,
-                              backgroundColor: AppTheme.primary.withOpacity(0.15),
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
-                            ),
+              // 1. O'yinchi Pasporti (Identity Card)
+              GlassContainer(
+                borderRadius: 24,
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [AppTheme.primaryLight, AppTheme.primary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
                           ),
-                          const Text(
-                            '98%',
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'S',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Shohrux Atabullayev',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      '+998 93 768 06 28',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.shield, size: 14, color: AppTheme.primary),
+                          SizedBox(width: 6),
+                          Text(
+                            '⚽ Yarim himoyachi • 98.5% Karma',
                             style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
                               color: AppTheme.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Ishonchlilik Darajasi',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primary.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    'PRO',
-                                    style: TextStyle(
-                                      color: AppTheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'O‘yinlarga o‘z vaqtida kelgan va doim faol qatnashgan futbolchi.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // Stats Row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    _statItem(icon: Icons.sports_soccer, title: 'O‘yinlar', value: '32'),
-                    const SizedBox(width: 12),
-                    _statItem(icon: Icons.thumb_up_alt_rounded, title: 'Fair Play', value: '4.9 ★'),
-                    const SizedBox(width: 12),
-                    _statItem(icon: Icons.emoji_events_rounded, title: 'Reyting', value: '#14'),
+              // 2. Mini-Statistika (Hub)
+              Row(
+                children: [
+                  _statBox(icon: Icons.sports_soccer, value: '15', label: "O'yinlar"),
+                  const SizedBox(width: 10),
+                  _statBox(icon: Icons.check_circle_outline, value: '0', label: 'No-Show'),
+                  const SizedBox(width: 10),
+                  _statBox(icon: Icons.star, value: '4.9', label: 'Reyting'),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 3. Funksional Sozlamalar va Bo'limlar
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.glassShadow,
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              // Settings List
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    _settingsTile(icon: Icons.notifications_rounded, title: 'Bildirishnomalar'),
-                    const SizedBox(height: 10),
-                    _settingsTile(icon: Icons.security_rounded, title: 'Xavfsizlik va Maxfiylik'),
-                    const SizedBox(height: 10),
-                    _settingsTile(icon: Icons.language_rounded, title: 'Til: O‘zbekcha'),
-                    const SizedBox(height: 16),
-                    GlassContainer(
-                      borderRadius: 18,
-                      padding: const EdgeInsets.all(16),
-                      onTap: () async {
-                        HapticFeedback.mediumImpact();
-                        await ApiService().clearToken();
-                        if (context.mounted) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          );
-                        }
-                      },
+                    _menuTile(
+                      icon: Icons.wallet_rounded,
+                      color: const Color(0xFF0284C7),
+                      title: 'Mening Hamyonim & Kartalar',
+                      subtitle: 'Balans: $_walletBalance so‘m',
+                      onTap: () {},
+                    ),
+                    const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
+                    _menuTile(
+                      icon: Icons.people_alt_rounded,
+                      color: const Color(0xFF8B5CF6),
+                      title: 'Mening Jamoam (Squad)',
+                      subtitle: 'FC Bunyodkor Havaskor',
+                      onTap: () {},
+                    ),
+                    const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
+                    _menuTile(
+                      icon: Icons.history_rounded,
+                      color: Colors.indigo,
+                      title: 'O‘yinlar va bronlar tarixi',
+                      onTap: () {},
+                    ),
+                    const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       child: Row(
-                        children: const [
-                          Icon(Icons.logout_rounded, color: AppTheme.danger),
-                          SizedBox(width: 12),
-                          Text(
-                            'Tizimdan chiqish',
-                            style: TextStyle(
-                              color: AppTheme.danger,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                        children: [
+                          _iconBadge(Icons.notifications_rounded, Colors.orange),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Bildirishnomalar',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  'Telegram va SMS eslatmalar',
+                                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                ),
+                              ],
                             ),
+                          ),
+                          Switch(
+                            value: _notifications,
+                            onChanged: (val) {
+                              HapticFeedback.lightImpact();
+                              setState(() => _notifications = val);
+                            },
+                            activeColor: AppTheme.primary,
                           ),
                         ],
                       ),
                     ),
+                    const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          _iconBadge(Icons.business_rounded, AppTheme.primary),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Maydon egasi rejimi',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  'Stadionlar va slotlar boshqaruvi',
+                                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _ownerMode,
+                            onChanged: (val) {
+                              HapticFeedback.lightImpact();
+                              setState(() => _ownerMode = val);
+                            },
+                            activeColor: AppTheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1, indent: 64, color: Color(0xFFF1F5F9)),
+                    _menuTile(
+                      icon: Icons.language_rounded,
+                      color: Colors.blueGrey,
+                      title: 'Til: O‘zbekcha',
+                      onTap: () {},
+                    ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 4. Chiqish tugmasi
+              GestureDetector(
+                onTap: () async {
+                  HapticFeedback.mediumImpact();
+                  await ApiService().clearToken();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFFEE2E2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.logout_rounded, color: AppTheme.danger, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Akkountdan chiqish',
+                        style: TextStyle(
+                          color: AppTheme.danger,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -206,30 +287,31 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _statItem({required IconData icon, required String title, required String value}) {
+  Widget _statBox({required IconData icon, required String value, required String label}) {
     return Expanded(
-      child: GlassContainer(
-        borderRadius: 18,
-        padding: const EdgeInsets.all(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
         child: Column(
           children: [
-            Icon(icon, color: AppTheme.primary, size: 20),
-            const SizedBox(height: 6),
+            Icon(icon, size: 18, color: AppTheme.textSecondary),
+            const SizedBox(height: 4),
             Text(
               value,
               style: const TextStyle(
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
                 color: AppTheme.textPrimary,
               ),
             ),
             const SizedBox(height: 2),
             Text(
-              title,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppTheme.textMuted,
-              ),
+              label,
+              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -237,27 +319,43 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _settingsTile({required IconData icon, required String title}) {
-    return GlassContainer(
-      borderRadius: 18,
-      padding: const EdgeInsets.all(16),
-      onTap: () => HapticFeedback.lightImpact(),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.primary, size: 20),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const Spacer(),
-          const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
-        ],
+  Widget _menuTile({
+    required IconData icon,
+    required Color color,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: _iconBadge(icon, color),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textPrimary,
+        ),
       ),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary))
+          : null,
+      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.textMuted),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+    );
+  }
+
+  Widget _iconBadge(IconData icon, Color color) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 }

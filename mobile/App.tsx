@@ -23,6 +23,7 @@ import { SlotPickerModal } from './components/SlotPickerModal';
 import { LoginScreen } from './components/LoginScreen';
 import { RadarScanner } from './components/RadarScanner';
 import { OwnerDashboard } from './components/OwnerDashboard';
+import { ProfileScreen } from './components/ProfileScreen';
 import { WelcomeBackModal } from './components/WelcomeBackModal';
 import { SpotlightWalkthrough } from './components/SpotlightWalkthrough';
 
@@ -485,84 +486,13 @@ export default function App() {
           </View>
         )}
 
-        {/* ─── TAB 4: PROFILE & KARMA ────────────────────── */}
+        {/* ─── TAB 4: PROFILE & SETTINGS ────────────────── */}
         {currentTab === 'profile' && (
-          <View>
-            <View style={styles.profileHeaderCard}>
-              <View style={styles.profileAvatarLarge}>
-                <Text style={styles.avatarLargeText}>
-                  {getUserAvatarLetter(user)}
-                </Text>
-              </View>
-              <Text style={styles.profileName}>{getUserDisplayName(user)}</Text>
-              <Text style={styles.profilePhone}>{user?.phone_number || 'Telefon kiritilmagan'}</Text>
-
-              {/* Ism & Familiya Tafsilotlari */}
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {user?.first_name ? (
-                  <View style={{ backgroundColor: THEME.colors.primaryBg, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: THEME.colors.surfaceBorderActive }}>
-                    <Text style={{ color: THEME.colors.primary, fontSize: 12, fontWeight: '700' }}>Ism: {user.first_name}</Text>
-                  </View>
-                ) : null}
-                {user?.last_name ? (
-                  <View style={{ backgroundColor: 'rgba(14, 165, 233, 0.08)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(14, 165, 233, 0.25)' }}>
-                    <Text style={{ color: THEME.colors.electricBlue, fontSize: 12, fontWeight: '700' }}>Familiya: {user.last_name}</Text>
-                  </View>
-                ) : null}
-                <View style={{ backgroundColor: THEME.colors.surfaceLight, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: THEME.colors.border }}>
-                  <Text style={{ color: THEME.colors.textSecondary, fontSize: 12, fontWeight: '600' }}>
-                    {user?.role === 'owner' ? '👑 Maydon Egasi' : '⚽ O\'yinchi'}
-                  </Text>
-                </View>
-              </View>
-
-
-              <View style={styles.karmaBox}>
-                <Ionicons name="shield-checkmark" size={24} color={THEME.colors.accent} style={{ marginBottom: 4 }} />
-                <Text style={styles.karmaLabel}>Ishonchlilik Reytingi (Reliability Karma)</Text>
-                <Text style={styles.karmaBigScore}>98.5%</Text>
-                <Text style={styles.karmaNote}>A'lo darajada — sizga barcha o'yinlarda kafil kerak emas</Text>
-              </View>
-            </View>
-
-            {/* Stats Grid */}
-            <View style={styles.statsGrid}>
-              <View style={styles.statBox}>
-                <Text style={styles.statNum}>15</Text>
-                <Text style={styles.statLabel}>O'yinlar</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statNum}>0</Text>
-                <Text style={styles.statLabel}>No-Show</Text>
-              </View>
-              <View style={styles.statBox}>
-                <Text style={styles.statNum}>4.9</Text>
-                <Text style={styles.statLabel}>Reyting</Text>
-              </View>
-            </View>
-
-            {/* Badges Section */}
-            <Text style={styles.sectionTitle}>Yutuqlar va Nishonlar (Badges)</Text>
-            <View style={styles.badgesRow}>
-              {[
-                { iconName: 'shield-checkmark' as const, title: 'Temir O\'yinchi', desc: '10+ o\'yin' },
-                { iconName: 'trophy' as const, title: 'To\'purar', desc: 'Faol hujumchi' },
-                { iconName: 'ribbon' as const, title: 'Halol O\'yin', desc: '100% Karma' },
-              ].map((b, i) => (
-                <View key={i} style={styles.badgeCard}>
-                  <Ionicons name={b.iconName} size={24} color={THEME.colors.primary} style={{ marginBottom: 6 }} />
-                  <Text style={styles.badgeCardTitle}>{b.title}</Text>
-                  <Text style={styles.badgeCardDesc}>{b.desc}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Logout Button */}
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
-              <Ionicons name="log-out-outline" size={18} color={THEME.colors.danger} />
-              <Text style={styles.logoutText}>Akkountdan chiqish (Logout)</Text>
-            </TouchableOpacity>
-          </View>
+          <ProfileScreen
+            user={user}
+            onLogout={handleLogout}
+            onSwitchToOwner={() => setCurrentTab('owner')}
+          />
         )}
 
         {/* ─── TAB 5: OWNER / MANAGEMENT ─────────────────── */}
