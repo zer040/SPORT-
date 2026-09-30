@@ -1,24 +1,10 @@
 import { Platform } from 'react-native';
 
-// Local Wi-Fi IP and Android Emulator IP
-const WI_FI_HOST = '192.168.137.1:8000';
-const ANDROID_EMULATOR_HOST = '10.0.2.2:8000';
-const LOCALHOST = 'localhost:8000';
+// Production Cloud Backend URL (Render 24/7)
+export const API_URL = 'https://sport-jmu3.onrender.com/api/v1';
+export const BASE_URL = API_URL;
 
-export const getBaseUrl = (): string => {
-  if (Platform.OS === 'android') {
-    // If running in Android Emulator, 10.0.2.2 points to host machine
-    return `http://${ANDROID_EMULATOR_HOST}/api/v1`;
-  }
-  if (Platform.OS === 'web') {
-    return `http://${LOCALHOST}/api/v1`;
-  }
-  // iOS simulator or real device over Wi-Fi
-  return `http://${WI_FI_HOST}/api/v1`;
-};
-
-export const BASE_URL = getBaseUrl();
-export const API_URL = BASE_URL;
+export const getBaseUrl = (): string => API_URL;
 
 // Generic fetcher
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}, token?: string | null): Promise<T> {
