@@ -26,6 +26,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 }) => {
   const [step, setStep] = useState<'login' | 'otp' | 'register'>('login');
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  // 'player' — Telegram OTP (asosiy), 'staff' — Owner/Admin username+parol
+  const [authMode, setAuthMode] = useState<'player' | 'staff'>('player');
+
+  // Staff (Owner/Admin) login state
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [staffPasswordVisible, setStaffPasswordVisible] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false);
 
   // Telegram Auth state
   const BOT_USERNAME = 'sport_plus_uz_bot';
@@ -228,6 +236,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     executeVerifyOtp(otpCode);
   };
 
+  // Staff (Owner/Admin) credentials login handler
+  const handleStaffLogin = async () => {
+    if (!staffUsername.trim() || !staffPassword.trim()) {
+      triggerError("Login va parolni to'liq kiriting");
+      return;
+    }
+    setStaffLoading(true);
+    setHasError(false);
+    setErrorMsg(null);
+    try {
+      const res = await Api.loginWithCredentials(
+        staffUsername.trim().toLowerCase(),
+        staffPassword
+      );
+      onLoginSuccess({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+        user: res.user,
+        show_welcome_back: true,
+        is_first_login: false,
+      });
+    } catch (err: any) {
+      triggerError(err.message || "Login yoki parol noto'g'ri");
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
   // Complete Registration for NEW_USER
   const handleCompleteRegistration = async () => {
     if (!regFirstName.trim()) {
@@ -332,80 +368,121 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <View style={styles.cardContainer}>
         <View style={styles.glassCard}>
           {step === 'login' ? (
-            /* 1. GLASSMORPHIC LOGIN VIEW */
+            /* LOGIN VIEW — Player (Telegram OTP) yoki Staff (username+parol) */
             <>
-              {/* Clean Header Tab: Log in active, Sign up toggle */}
+              {/* Mode Tab: O'yinchi / Biznes & Admin */}
               <View style={styles.tabContainer}>
                 <TouchableOpacity
-                  style={[
-                    styles.tabItem,
-                    activeTab === 'login' && styles.tabItemActive,
-                  ]}
-                  onPress={() => setActiveTab('login')}
+                  style={[styles.tabItem, authMode === 'player' && styles.tabItemActive]}
+                  onPress={() => { setAuthMode('player'); setHasError(false); setErrorMsg(null); }}
                   activeOpacity={0.8}
                 >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      activeTab === 'login' && styles.tabTextActive,
-                    ]}
-                  >
-                    Log in
+                  <Text style={[styles.tabText, authMode === 'player' && styles.tabTextActive]}>
+                    O'yinchi
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    styles.tabItem,
-                    activeTab === 'signup' && styles.tabItemActive,
-                  ]}
-                  onPress={() => setActiveTab('signup')}
+                  style={[styles.tabItem, authMode === 'staff' && styles.tabItemActive]}
+                  onPress={() => { setAuthMode('staff'); setHasError(false); setErrorMsg(null); }}
                   activeOpacity={0.8}
                 >
-                  <Text
-                    style={[
-                      styles.tabText,
-                      activeTab === 'signup' && styles.tabTextActive,
-                    ]}
-                  >
-                    Sign up
+                  <Text style={[styles.tabText, authMode === 'staff' && styles.tabTextActive]}>
+                    Biznes & Admin
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Title & Concise Context */}
-              <Text style={styles.cardHeading}>
-                {activeTab === 'login' ? 'Hisobga kirish' : 'Hisob yaratish'}
-              </Text>
-              <Text style={styles.cardSubheading}>
-                {activeTab === 'login'
-                  ? 'Maydonlarni bron qilish va matchmaking'
-                  : 'Yangi profil bilan tizimga qo‘shiling'}
-              </Text>
+              {authMode === 'player' ? (
+                /* PLAYER — Telegram OTP */
+                <>
+                  <Text style={styles.cardHeading}>Hisobga kirish</Text>
+                  <Text style={styles.cardSubheading}>
+                    Parolsiz va tezkor kirish. Telegram botdan 6 xonali kod
+                  </Text>
 
-              {/* Single prominent dark CTA: Telegram bilan kirish */}
-              <TouchableOpacity
-                style={styles.primaryDarkCta}
-                onPress={handleTelegramLogin}
-                disabled={loading}
-                activeOpacity={0.88}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="paper-plane"
-                      size={18}
-                      color="#FFFFFF"
-                      style={{ marginRight: 10 }}
+                  <TouchableOpacity
+                    style={styles.primaryDarkCta}
+                    onPress={handleTelegramLogin}
+                    disabled={loading}
+                    activeOpacity={0.88}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="paper-plane" size={18} color="#FFFFFF" style={{ marginRight: 10 }} />
+                        <Text style={styles.primaryDarkCtaText}>Telegram bilan kirish</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </>
+              ) : (
+                /* STAFF — Username + Parol */
+                <>
+                  <Text style={styles.cardHeading}>Biznes Kirish</Text>
+                  <Text style={styles.cardSubheading}>
+                    Maydon egalari va adminlar uchun
+                  </Text>
+
+                  {/* Username input */}
+                  <View style={styles.staffInputWrap}>
+                    <Ionicons name="person-outline" size={18} color="#64748B" style={styles.staffInputIcon} />
+                    <TextInput
+                      style={styles.staffInput}
+                      placeholder="Login (username)"
+                      placeholderTextColor="#94A3B8"
+                      value={staffUsername}
+                      onChangeText={setStaffUsername}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="next"
                     />
-                    <Text style={styles.primaryDarkCtaText}>
-                      Telegram bilan {activeTab === 'login' ? 'kirish' : 'boshlash'}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                  </View>
+
+                  {/* Password input */}
+                  <View style={styles.staffInputWrap}>
+                    <Ionicons name="lock-closed-outline" size={18} color="#64748B" style={styles.staffInputIcon} />
+                    <TextInput
+                      style={[styles.staffInput, { flex: 1 }]}
+                      placeholder="Parol"
+                      placeholderTextColor="#94A3B8"
+                      value={staffPassword}
+                      onChangeText={setStaffPassword}
+                      secureTextEntry={!staffPasswordVisible}
+                      returnKeyType="done"
+                      onSubmitEditing={handleStaffLogin}
+                    />
+                    <TouchableOpacity onPress={() => setStaffPasswordVisible(!staffPasswordVisible)}>
+                      <Ionicons
+                        name={staffPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                        size={18}
+                        color="#94A3B8"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[styles.staffLoginBtn, staffLoading && { opacity: 0.6 }]}
+                    onPress={handleStaffLogin}
+                    disabled={staffLoading}
+                    activeOpacity={0.88}
+                  >
+                    {staffLoading ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="log-in-outline" size={18} color="#FFF" style={{ marginRight: 8 }} />
+                        <Text style={styles.staffLoginBtnText}>Tizimga kirish</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <Text style={styles.staffHint}>
+                    Agar sizda login/parol yo'q bo'lsa — avval Telegram orqali kiring va profilingizda kirish kaliti yarating.
+                  </Text>
+                </>
+              )}
             </>
           ) : step === 'otp' ? (
             /* 2. KINETIC OTP VERIFICATION VIEW */
@@ -946,5 +1023,47 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 4,
     elevation: 1,
+  },
+  // ── Staff (Owner/Admin) kirish formi ──────────────────────
+  staffInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  staffInputIcon: {
+    marginRight: 10,
+  },
+  staffInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1E232B',
+  },
+  staffLoginBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    paddingVertical: 15,
+    borderRadius: 16,
+    marginTop: 4,
+    gap: 6,
+  },
+  staffLoginBtnText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  staffHint: {
+    textAlign: 'center',
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 14,
+    lineHeight: 16,
   },
 });

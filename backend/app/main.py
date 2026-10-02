@@ -38,6 +38,43 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
             await conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
             await conn.run_sync(Base.metadata.create_all)
+            # Safe schema update for existing tables
+            schema_updates = [
+                "ALTER TABLE slots ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'AVAILABLE';",
+                "ALTER TABLE slots ADD COLUMN IF NOT EXISTS booking_source VARCHAR(20) DEFAULT 'APP';",
+                "ALTER TABLE slots ADD COLUMN IF NOT EXISTS booked_by_name VARCHAR(100);",
+                "ALTER TABLE slots ADD COLUMN IF NOT EXISTS booked_by_phone VARCHAR(20);",
+                "ALTER TABLE slots ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT false;",
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS base_price_per_hour NUMERIC(12, 2) DEFAULT 200000.00;",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50);",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_credentials_set BOOLEAN DEFAULT false;",
+                "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS tags JSONB DEFAULT '[]'::jsonb;",
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS total_reviews INTEGER DEFAULT 0;",
+                "ALTER TABLE venues ADD COLUMN IF NOT EXISTS avg_rating NUMERIC(3, 1) DEFAULT 5.0;",
+                "CREATE OR REPLACE VIEW venue_reviews AS SELECT * FROM reviews;",
+            ]
+            for stmt in schema_updates:
+                try:
+                    await conn.execute(text(stmt))
+                except Exception as stmt_err:
+                    logger.debug(f"Schema update statement skipped ({stmt_err})")
+
+            # username ustuni uchun UNIQUE constraint (takroriy xatoni oldini olish)
+            try:
+                await conn.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_indexes
+                            WHERE tablename = 'users' AND indexname = 'users_username_key'
+                        ) THEN
+                            CREATE UNIQUE INDEX users_username_key ON users(username) WHERE username IS NOT NULL;
+                        END IF;
+                    END $$;
+                """))
+            except Exception as idx_err:
+                logger.debug(f"Index creation skipped ({idx_err})")
         logger.info("✅ PostGIS, btree_gist extension va Database jadvallari muvaffaqiyatli tekshirildi/yaratildi")
     except Exception as e:
         logger.warning(f"⚠️ Database ulanmadi yoki jadvallar yaratishda xatolik ({e}). Docker/PostgreSQL sozlamalarini tekshiring.")
@@ -53,8 +90,9 @@ async def lifespan(app: FastAPI):
         )
         webhook_success = False
 
-        # 1. Agar TELEGRAM_WEBHOOK_URL ko'rsatilgan bo'lsa, webhook o'rnatishga harakat qilamiz
-        if settings.TELEGRAM_WEBHOOK_URL and settings.TELEGRAM_WEBHOOK_URL.startswith("http"):
+        # Production muhitida va Webhook URL berilgan bo'lsa -> Webhook o'rnatiladi
+        is_production = settings.APP_ENV == "production"
+        if is_production and settings.TELEGRAM_WEBHOOK_URL and settings.TELEGRAM_WEBHOOK_URL.startswith("http"):
             try:
                 webhook_url = f"{settings.TELEGRAM_WEBHOOK_URL.rstrip('/')}{settings.API_V1_PREFIX}/telegram-webhook"
                 logger.info(f"🔗 Telegram webhook o'rnatilmoqda: {webhook_url}")
@@ -65,16 +103,19 @@ async def lifespan(app: FastAPI):
                 logger.warning(f"⚠️ Telegram webhook sozlashda xatolik: {e}. Polling rejimiga o'tilmoqda...")
                 webhook_success = False
 
-        # 2. Agar Webhook sozlanmagan bo'lsa yoki xatolik bersa -> Avtomatik Polling rejimiga o'tamiz
+        # Lokal (development) yoki Webhook o'rnatilmagan holatda -> Har doim POLLING
         if not webhook_success:
-            logger.info("🤖 Telegram Webhook ishlamayapti yoki berilmagan. Polling rejimiga o'tilmoqda...")
+            logger.info("🤖 Telegram Bot Polling rejimida ishga tushirilmoqda...")
             async def _start_bot_background():
                 try:
-                    await asyncio.wait_for(bot.delete_webhook(drop_pending_updates=True), timeout=2.0)
+                    logger.info("🧹 Eski webhook tozalanmoqda...")
+                    await bot.delete_webhook(drop_pending_updates=True)
+                    logger.info("✅ Telegram Bot POLLING rejimida muvaffaqiyatli tinglashni boshladi!")
                     await dp.start_polling(bot)
-                    logger.info("✅ Telegram Bot POLLING rejimida muvaffaqiyatli ishga tushirildi!")
+                except asyncio.CancelledError:
+                    logger.info("🛑 Telegram bot polling to'xtatildi.")
                 except Exception as e:
-                    logger.warning(f"⚠️ Telegram Bot fonida ulanish: {e}")
+                    logger.warning(f"⚠️ Telegram Bot fonida xatolik: {e}")
 
             bot_task = asyncio.create_task(_start_bot_background())
 

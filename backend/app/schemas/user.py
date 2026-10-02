@@ -44,6 +44,9 @@ class UserResponse(BaseModel):
     is_verified: bool = True
     is_profile_completed: bool = True
     has_seen_tutorial: bool = False
+    # Credentials (Owner/Admin uchun)
+    username: Optional[str] = None
+    is_credentials_set: bool = False
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

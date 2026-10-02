@@ -13,6 +13,7 @@ from app.api.owner import router as owner_router
 from app.api.payments.click import router as click_router
 from app.api.payments.payme import router as payme_router
 from app.api.pitches import router as pitches_router
+from app.api.reviews import router as reviews_router
 from app.api.slots import router as slots_router
 from app.api.solo_profile import router as solo_profile_router
 from app.api.telegram_auth import router as telegram_auth_router
@@ -26,6 +27,9 @@ api_router.include_router(telegram_auth_router, prefix="/auth/telegram", tags=["
 
 # ─── Venues ───────────────────────────────────
 api_router.include_router(venues_router, prefix="/venues", tags=["Venues"])
+
+# ─── Reviews & Ratings ────────────────────────
+api_router.include_router(reviews_router, prefix="/reviews", tags=["Reviews & Ratings"])
 
 # ─── Pitches ──────────────────────────────────
 api_router.include_router(pitches_router, prefix="/pitches", tags=["Pitches"])
@@ -70,4 +74,47 @@ async def telegram_webhook_handler(update: Dict[str, Any]):
     """Telegram serveridan kelgan yangilanishni dp.feed_update orqali qayta ishlash"""
     await process_telegram_update(update)
     return {"ok": True}
+
+
+# ─── Live Real-Time WebSockets (Owner-Player Instant Sync) ───
+from fastapi import WebSocket, WebSocketDisconnect
+from app.core.events import realtime_hub
+from app.core.websocket_manager import ws_manager
+
+@api_router.websocket("/ws/live")
+async def live_websocket_endpoint(websocket: WebSocket):
+    """
+    Global Real-Time WebSocket:
+    Owner slot yoki narxni o'zgartirganda barcha ulanganlar real vaqtda xabar oladi.
+    Events: SLOT_UPDATED, VENUE_UPDATED
+    """
+    await realtime_hub.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()  # Keep-alive ping/pong
+    except WebSocketDisconnect:
+        await realtime_hub.disconnect(websocket)
+    except Exception:
+        await realtime_hub.disconnect(websocket)
+
+
+@api_router.websocket("/ws/venue/{venue_id}")
+async def venue_websocket_endpoint(websocket: WebSocket, venue_id: str):
+    """
+    Venue-specific Real-Time WebSocket Room:
+    Faqat shu venue sahifasini ochgan o'yinchilar shu venue'ning slot o'zgarishlarini oladi.
+    Bu barcha broadcast o'rniga targeted event delivery ta'minlaydi.
+    Events: slot:held, slot:booked, slot:released, slot:updated
+    """
+    await ws_manager.connect(websocket, venue_id)
+    try:
+        while True:
+            msg = await websocket.receive_text()  # Keep-alive ping/pong
+            # Owner ping yuborsa — pong qaytaramiz
+            if msg == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, venue_id)
+    except Exception:
+        ws_manager.disconnect(websocket, venue_id)
 

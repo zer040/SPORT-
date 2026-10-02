@@ -14,7 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     ForeignKey,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -44,6 +44,9 @@ class Review(Base):
     )
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[list] = mapped_column(
+        JSONB, default=list, server_default="[]"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -51,6 +54,7 @@ class Review(Base):
     # Relationships
     user = relationship("User", back_populates="reviews")
     venue = relationship("Venue", back_populates="reviews")
+    booking = relationship("Booking", back_populates="review")
 
     __table_args__ = (
         CheckConstraint("rating >= 1 AND rating <= 5", name="valid_review_rating"),

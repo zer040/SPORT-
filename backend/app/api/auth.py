@@ -1,18 +1,24 @@
 """
 Auth API Endpoints — OTP yuborish, tasdiqlash, JWT yangilash va profil ma'lumotlari.
+Credential login (Owner/Admin uchun username+password) ham shu modulda.
 """
 
 from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 import redis.asyncio as redis
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.core.dependencies import get_redis
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
 from app.models.user import User
 from app.schemas.auth import (
     OTPSendRequest,
@@ -24,6 +30,85 @@ from app.services.auth_service import AuthService
 from app.services.telegram_bot import redis_client as bot_redis
 
 router = APIRouter()
+
+
+# ─── Credential Login (Owner / Admin uchun) ──────────────────────────────────
+
+class CredentialsLoginRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="Login (username)")
+    password: str = Field(..., min_length=6, description="Parol")
+
+
+@router.post(
+    "/login-credentials",
+    summary="Owner/Admin uchun username + parol bilan kirish",
+)
+async def login_with_credentials(
+    payload: CredentialsLoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Faqat Owner va Admin roli uchun.
+    Player bu yo'nalishdan foydalana olmaydi — ular Telegram OTP orqali kiradi.
+    """
+    result = await db.execute(
+        select(User).where(User.username == payload.username.strip().lower())
+    )
+    user = result.scalar_one_or_none()
+
+    # Xavfsizlik: ikkala xatoni ham bir xil xabar bilan qaytaramiz
+    if not user or not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Login yoki parol noto'g'ri",
+        )
+
+    if user.role.lower() not in ("owner", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bu kirish usuli faqat maydon egalari va adminlar uchun",
+        )
+
+    if not verify_password(payload.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Login yoki parol noto'g'ri",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hisob bloklangan. Administrator bilan bog'laning.",
+        )
+
+    # Last login yangilash
+    from datetime import datetime, timezone
+    await db.execute(
+        update(User)
+        .where(User.id == user.id)
+        .values(last_login_at=datetime.now(timezone.utc))
+    )
+    await db.commit()
+
+    access_token = create_access_token(
+        data={"sub": str(user.id), "role": user.role}
+    )
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "status": "EXISTING_USER",
+        "user": {
+            "id": str(user.id),
+            "full_name": user.full_name,
+            "username": user.username,
+            "role": user.role,
+            "is_credentials_set": user.is_credentials_set,
+            "avatar_url": user.avatar_url,
+        },
+    }
 
 
 
@@ -107,6 +192,8 @@ async def get_me(
             "is_verified": current_user.get("is_verified", True),
             "is_profile_completed": current_user.get("is_profile_completed", True),
             "has_seen_tutorial": current_user.get("has_seen_tutorial", False),
+            "username": current_user.get("username"),
+            "is_credentials_set": current_user.get("is_credentials_set", False),
             "created_at": current_user.get("created_at"),
         }
     fn = current_user.first_name or (current_user.full_name.split()[0] if current_user.full_name else "")
@@ -126,6 +213,8 @@ async def get_me(
         "is_verified": True,
         "is_profile_completed": current_user.is_profile_completed,
         "has_seen_tutorial": getattr(current_user, "has_seen_tutorial", False),
+        "username": getattr(current_user, "username", None),
+        "is_credentials_set": getattr(current_user, "is_credentials_set", False),
         "created_at": current_user.created_at,
     }
 

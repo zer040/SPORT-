@@ -55,10 +55,14 @@ class Venue(Base):
     facilities: Mapped[dict] = mapped_column(
         JSONB, default=dict, server_default="{}"
     )
+    base_price_per_hour: Mapped[float] = mapped_column(
+        Numeric(12, 2), default=200000.00, server_default="200000.00"
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     avg_rating: Mapped[float] = mapped_column(
-        Numeric(3, 2), default=0.00
+        Numeric(3, 1), default=5.0, server_default="5.0"
     )
+    total_reviews: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     total_bookings: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

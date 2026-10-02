@@ -44,6 +44,35 @@ async def hold_booking(
     slot_ids = payload.slot_ids or ([payload.slot_id] if payload.slot_id else [])
     booking = None
 
+    if db is not None:
+        try:
+            from uuid import UUID
+            from sqlalchemy import select
+            from app.models.booking import Booking
+            from app.models.review import Review
+            from fastapi import HTTPException
+
+            u_id = current_user.id if hasattr(current_user, "id") else UUID(str(current_user.get("id") if isinstance(current_user, dict) else current_user))
+            unreviewed = await db.scalar(
+                select(Booking.id)
+                .outerjoin(Review, Review.booking_id == Booking.id)
+                .where(
+                    Booking.user_id == u_id,
+                    Booking.status == "COMPLETED",
+                    Review.id == None,
+                )
+                .limit(1)
+            )
+            if unreviewed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Yangi maydon bron qilish uchun avval tugallangan o'yiningizni baholang (Post-Match Review talab qilinadi)."
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+
     if db is not None and redis_client is not None:
         try:
             from uuid import UUID

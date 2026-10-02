@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../constants/theme';
 import { Api } from '../services/api';
+import { VenueEditScreen } from './VenueEditScreen';
 
 interface OwnerDashboardProps {
   token: string;
@@ -23,6 +24,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ token, user }) =
   const [pendingBookings, setPendingBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [editingVenue, setEditingVenue] = useState<any | null>(null);
 
   useEffect(() => {
     loadOwnerData();
@@ -71,7 +73,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ token, user }) =
   }
 
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container}>
       {/* Header Banner */}
       <View style={styles.roleBanner}>
         <View style={styles.roleBadge}>
@@ -175,7 +178,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ token, user }) =
       {venues.map((v) => (
         <View key={v.id} style={styles.venueItemCard}>
           <View style={styles.venueItemHeader}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.venueItemTitle}>{v.name}</Text>
               <Text style={styles.venueItemAddress}>{v.address}, {v.city}</Text>
             </View>
@@ -195,13 +198,39 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({ token, user }) =
               <Text style={styles.miniStatLabel}>Jami bronlar</Text>
             </View>
             <View style={styles.miniStat}>
-              <Text style={[styles.miniStatValue, { color: THEME.colors.primary }]}>Faol</Text>
+              <Text style={[styles.miniStatValue, { color: v.is_active ? THEME.colors.primary : THEME.colors.danger }]}>
+                {v.is_active ? 'Faol' : 'Nofaol'}
+              </Text>
               <Text style={styles.miniStatLabel}>Status</Text>
             </View>
           </View>
+
+          {/* Tahrirlash tugmasi */}
+          <TouchableOpacity
+            style={styles.editVenueBtn}
+            onPress={() => setEditingVenue(v)}
+          >
+            <Ionicons name="settings" size={15} color={THEME.colors.primary} />
+            <Text style={styles.editVenueBtnText}>Boshqarish va Tahrirlash</Text>
+            <Ionicons name="chevron-forward" size={15} color={THEME.colors.primary} />
+          </TouchableOpacity>
         </View>
       ))}
     </View>
+
+    {/* VenueEditScreen — Modal sifatida */}
+    {editingVenue && (
+      <VenueEditScreen
+        venue={editingVenue}
+        token={token}
+        onClose={() => setEditingVenue(null)}
+        onSaved={() => {
+          setEditingVenue(null);
+          loadOwnerData();
+        }}
+      />
+    )}
+  </>
   );
 };
 
@@ -444,7 +473,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   miniStatValue: {
-    color: '#FFF',
+    color: THEME.colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -452,5 +481,22 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     fontSize: 10,
     marginTop: 2,
+  },
+  editVenueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+    paddingHorizontal: 4,
+  },
+  editVenueBtnText: {
+    flex: 1,
+    color: THEME.colors.primary,
+    fontSize: 13,
+    fontWeight: '700',
+    marginLeft: 8,
   },
 });

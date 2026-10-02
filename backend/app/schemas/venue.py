@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.schemas.common import GeoPoint
+from app.schemas.review import ReviewResponse
 
 
 class VenueBase(BaseModel):
@@ -32,6 +33,8 @@ class VenueBase(BaseModel):
             "wifi": False,
         }],
     )
+    amenities: Dict | None = Field(default=None, description="Qulayliklar (facilities alias)")
+    base_price_per_hour: float = Field(default=200000.0, ge=0, examples=[200000.0])
 
 
 class VenueCreate(VenueBase):
@@ -50,6 +53,9 @@ class VenueUpdate(BaseModel):
     working_hours_start: time | None = None
     working_hours_end: time | None = None
     facilities: Dict | None = None
+    amenities: Dict | None = None
+    base_price_per_hour: float | None = None
+    photos: List[str] | None = None
     is_active: bool | None = None
 
 
@@ -93,13 +99,16 @@ class VenueResponse(BaseModel):
     facilities: Dict
     is_active: bool
     avg_rating: float
+    total_reviews: int = 0
     total_bookings: int
+    is_super_host: bool = False
     created_at: datetime
     updated_at: datetime | None = None
 
     # Nested relationships
     pitches: List[PitchBriefResponse] = []
     images: List[VenueImageResponse] = []
+    reviews: List[ReviewResponse] = []
 
     model_config = {"from_attributes": True}
 
@@ -112,14 +121,26 @@ class VenueListItem(BaseModel):
     city: str
     district: str | None = None
     avg_rating: float
+    total_reviews: int = 0
     total_bookings: int
     facilities: Dict
     distance_km: Optional[float] = None
     primary_image_url: str | None = None
     min_price: Optional[float] = None
     available_slots_count: Optional[int] = None
+    is_super_host: bool = False
 
     model_config = {"from_attributes": True}
+
+
+class VenueRecommendationItem(VenueListItem):
+    recommendation_score: float = 0.0
+    previously_liked: bool = False
+
+
+class VenueRecommendationResponse(BaseModel):
+    recommended_venues: List[VenueRecommendationItem]
+    previously_liked_venues: List[VenueRecommendationItem]
 
 
 class VenueSearchQuery(BaseModel):

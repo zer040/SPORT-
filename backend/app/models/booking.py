@@ -121,6 +121,7 @@ class Booking(Base):
     user = relationship("User", back_populates="bookings")
     slot = relationship("Slot", back_populates="booking")
     payments = relationship("Payment", back_populates="booking", lazy="selectin")
+    review = relationship("Review", back_populates="booking", uselist=False, lazy="selectin")
 
     def __repr__(self):
         return f"<Booking {self.id} status={self.status}>"

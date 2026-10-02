@@ -54,6 +54,24 @@ class User(Base):
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # ─── Credentials Login (Owner / Admin uchun) ─────────────────────
+    # Player uchun bu maydonlar NULL — ular faqat Telegram OTP orqali kiradi.
+    # Owner / Admin CRM tasdig'idan so'ng o'zi o'rnatadi.
+    username: Mapped[str | None] = mapped_column(
+        String(50), unique=True, nullable=True, index=True,
+        comment="Owner/Admin login username (unique). Player uchun NULL."
+    )
+    password_hash: Mapped[str | None] = mapped_column(
+        String(255), nullable=True,
+        comment="bcrypt hash. Faqat Owner/Admin tomonidan o'rnatiladi."
+    )
+    is_credentials_set: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false",
+        comment="Owner/Admin username+password o'rnatganmi?"
+    )
+    # ──────────────────────────────────────────────────────────────────
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -74,4 +92,4 @@ class User(Base):
     )
 
     def __repr__(self):
-        return f"<User {self.full_name} ({self.phone_number})>"
+        return f"<User {self.full_name} ({self.phone_number or self.username})>"

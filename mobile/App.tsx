@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from './constants/theme';
@@ -26,6 +27,8 @@ import { OwnerDashboard } from './components/OwnerDashboard';
 import { ProfileScreen } from './components/ProfileScreen';
 import { WelcomeBackModal } from './components/WelcomeBackModal';
 import { SpotlightWalkthrough } from './components/SpotlightWalkthrough';
+import { VenueDetailsModal } from './components/VenueDetailsModal';
+import { PostMatchRatingModal } from './components/PostMatchRatingModal';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabKey>('venues');
@@ -80,6 +83,18 @@ export default function App() {
   const [venues, setVenues] = useState<any[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<any | null>(null);
   const [slotModalVisible, setSlotModalVisible] = useState(false);
+
+  // Recommendations & Retention ("Sizga yoqqan maydonlar")
+  const [recommendedVenues, setRecommendedVenues] = useState<any[]>([]);
+  const [previouslyLikedVenues, setPreviouslyLikedVenues] = useState<any[]>([]);
+
+  // Venue Details Passport & Reviews Modal
+  const [selectedVenueForDetails, setSelectedVenueForDetails] = useState<any | null>(null);
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+
+  // Post-Match Review & Ratings Gatekeeper
+  const [pendingReview, setPendingReview] = useState<any | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Solo Play Matches
   const [matches, setMatches] = useState<any[]>([]);
@@ -143,13 +158,18 @@ export default function App() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [vData, mData] = await Promise.allSettled([
+      const [vData, mData, rData] = await Promise.allSettled([
         Api.getVenues(41.2858, 69.2163, 20),
         Api.getMatches(41.2858, 69.2163, 25),
+        Api.getRecommendedVenues(41.2858, 69.2163, token || undefined),
       ]);
 
       if (vData.status === 'fulfilled') setVenues(vData.value);
       if (mData.status === 'fulfilled') setMatches(mData.value);
+      if (rData.status === 'fulfilled' && rData.value) {
+        setRecommendedVenues(rData.value.recommended_venues || []);
+        setPreviouslyLikedVenues(rData.value.previously_liked_venues || []);
+      }
 
       if (token) {
         try {
@@ -165,6 +185,20 @@ export default function App() {
           }
         } catch {
           // Token eskirgan yoki offline
+        }
+
+        // Post-Match Review Gatekeeper tekshiruvi
+        try {
+          const pendingRes = await Api.getPendingReview(token);
+          if (pendingRes && pendingRes.has_pending && pendingRes.pending_review) {
+            setPendingReview(pendingRes.pending_review);
+            setShowRatingModal(true);
+          } else {
+            setPendingReview(null);
+            setShowRatingModal(false);
+          }
+        } catch {
+          // Offline
         }
       }
     } catch (err) {
@@ -201,6 +235,15 @@ export default function App() {
       } catch {}
     }
 
+    if (authData.access_token) {
+      Api.getPendingReview(authData.access_token).then((pendingRes) => {
+        if (pendingRes?.has_pending && pendingRes.pending_review) {
+          setPendingReview(pendingRes.pending_review);
+          setShowRatingModal(true);
+        }
+      }).catch(() => {});
+    }
+
     const isFirst = Boolean(authData.is_first_login);
     const hasSeenTutorial = typeof window !== 'undefined' && window.localStorage
       ? window.localStorage.getItem('has_completed_tutorial') === 'true'
@@ -221,11 +264,12 @@ export default function App() {
     }
   };
 
-
   const handleLogout = () => {
     setToken(null);
     setUser(null);
     setActiveHeldBooking(null);
+    setPendingReview(null);
+    setShowRatingModal(false);
     setCurrentTab('venues');
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
@@ -235,10 +279,46 @@ export default function App() {
     }
   };
 
-
   const handleVenueSelect = (venue: any) => {
+    // Gatekeeper: Agar baholanmagan o'yin bo'lsa yangi bron qilish bloklanadi
+    if (pendingReview) {
+      Alert.alert(
+        'Baholash talab etiladi',
+        `Avvalgi o‘yiningizni (${pendingReview.venue_name || 'maydon'}) baholamasdan yangi bron qila olmaysiz.`,
+        [
+          { text: 'Baholash', onPress: () => setShowRatingModal(true) }
+        ]
+      );
+      setShowRatingModal(true);
+      return;
+    }
     setSelectedVenue(venue);
     setSlotModalVisible(true);
+  };
+
+  const handleOpenDetails = (venue: any) => {
+    setSelectedVenueForDetails(venue);
+    setDetailsModalVisible(true);
+  };
+
+  const handleSubmitReview = async (rating: number, comment: string, tags: string[]) => {
+    if (!token || !pendingReview) return;
+    try {
+      await Api.submitReview({
+        venue_id: pendingReview.venue_id,
+        booking_id: pendingReview.booking_id,
+        rating,
+        comment,
+        tags,
+      }, token);
+
+      setPendingReview(null);
+      setShowRatingModal(false);
+      Alert.alert('Rahmat!', 'Sharhingiz qabul qilindi va stadion reytingiga qo‘shildi.');
+      loadInitialData();
+    } catch (err: any) {
+      Alert.alert('Xatolik', err.message || 'Sharhni yuborishda xatolik yuz berdi');
+    }
   };
 
   const handleBookingSuccess = (bookingData: any) => {
@@ -316,7 +396,58 @@ export default function App() {
           <View>
             <View style={styles.tabHero}>
               <Text style={styles.heroTitle}>Futbol Maydonlari</Text>
+              <Text style={styles.heroSubtitle}>
+                {recommendedVenues.length > 0
+                  ? 'Eng yuqori reytingli va yaqin maydonlar'
+                  : 'Toshkent va Jizzax bo‘ylab eng yaxshi maydonlar'}
+              </Text>
             </View>
+
+            {/* 1. Retention Section: "Sizga yoqqan maydonlar" (User 5-star / previous venues) */}
+            {previouslyLikedVenues.length > 0 && (
+              <View style={styles.likedSection}>
+                <View style={styles.likedHeaderRow}>
+                  <View style={styles.likedBadge}>
+                    <Ionicons name="heart" size={13} color="#E11D48" />
+                    <Text style={styles.likedSectionTitle}>Sizga yoqqan maydonlar</Text>
+                  </View>
+                  <Text style={styles.likedSectionSub}>Tezkor qayta bron</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.likedScroll}>
+                  {previouslyLikedVenues.map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles.likedCard}
+                      activeOpacity={0.88}
+                      onPress={() => handleOpenDetails(item)}
+                    >
+                      <Image
+                        source={{ uri: item.primary_image_url || 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=600&auto=format&fit=crop' }}
+                        style={styles.likedCardImage}
+                      />
+                      <View style={styles.likedCardContent}>
+                        <View style={styles.likedNameRow}>
+                          <Text style={styles.likedCardName} numberOfLines={1}>{item.name}</Text>
+                          <View style={styles.likedStarPill}>
+                            <Ionicons name="star" size={11} color="#EAB308" />
+                            <Text style={styles.likedStarNum}>{Number(item.avg_rating || 5.0).toFixed(1)}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.likedCardAddress} numberOfLines={1}>{item.address}</Text>
+                        <TouchableOpacity
+                          style={styles.likedQuickBook}
+                          onPress={() => handleVenueSelect(item)}
+                          activeOpacity={0.8}
+                        >
+                          <Text style={styles.likedQuickBookText}>Bron qilish</Text>
+                          <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Filter Pills */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
@@ -341,14 +472,21 @@ export default function App() {
 
             {loading ? (
               <ActivityIndicator color={THEME.colors.primary} style={{ marginTop: 40 }} />
-            ) : venues.length === 0 ? (
+            ) : (recommendedVenues.length > 0 ? recommendedVenues : venues).length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="search-outline" size={32} color={THEME.colors.textMuted} style={{ marginBottom: 8 }} />
                 <Text style={styles.emptyTitle}>Maydonlar topilmadi</Text>
                 <Text style={styles.emptySubtitle}>Atrofingizda maydonlar topilmadi</Text>
               </View>
             ) : (
-              venues.map((v) => <VenueCard key={v.id} venue={v} onSelect={handleVenueSelect} />)
+              (recommendedVenues.length > 0 ? recommendedVenues : venues).map((v) => (
+                <VenueCard
+                  key={v.id}
+                  venue={v}
+                  onSelect={handleVenueSelect}
+                  onPressDetails={handleOpenDetails}
+                />
+              ))
             )}
           </View>
         )}
@@ -490,8 +628,17 @@ export default function App() {
         {currentTab === 'profile' && (
           <ProfileScreen
             user={user}
+            token={token || undefined}
             onLogout={handleLogout}
             onSwitchToOwner={() => setCurrentTab('owner')}
+            onUpdateUser={(updatedUser) => {
+              setUser(updatedUser);
+              if (typeof window !== 'undefined' && window.localStorage) {
+                try {
+                  window.localStorage.setItem('sportplus_user', JSON.stringify(updatedUser));
+                } catch {}
+              }
+            }}
           />
         )}
 
@@ -537,8 +684,40 @@ export default function App() {
         visible={showTutorial}
         onFinish={handleFinishTutorial}
       />
-    </SafeAreaView>
 
+      {/* Venue Details Passport & Reviews Modal */}
+      {selectedVenueForDetails && (
+        <VenueDetailsModal
+          visible={detailsModalVisible}
+          venueId={selectedVenueForDetails.id}
+          initialVenue={selectedVenueForDetails}
+          onClose={() => setDetailsModalVisible(false)}
+          onBookNow={(venue) => {
+            setDetailsModalVisible(false);
+            handleVenueSelect(venue);
+          }}
+        />
+      )}
+
+      {/* Mandatory Post-Match Review Modal (Yandex Taxi / Airbnb Flow) */}
+      {pendingReview && (
+        <PostMatchRatingModal
+          visible={showRatingModal}
+          venueName={pendingReview.venue_name || 'Stadion'}
+          venueId={pendingReview.venue_id}
+          bookingId={pendingReview.booking_id}
+          pitchName={pendingReview.pitch_name}
+          onSubmit={handleSubmitReview}
+          onClose={() => {
+            Alert.alert(
+              'Baholash talab etiladi',
+              'O‘yin sifatini baholamaguningizcha yangi stadion yoki slot bron qila olmaysiz.'
+            );
+            setShowRatingModal(false);
+          }}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
@@ -569,6 +748,102 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: THEME.colors.textSecondary,
     marginTop: 2,
+  },
+  likedSection: {
+    marginBottom: 16,
+    paddingTop: 4,
+  },
+  likedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: THEME.spacing.md,
+    marginBottom: 10,
+  },
+  likedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  likedSectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: THEME.colors.textPrimary,
+  },
+  likedSectionSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: THEME.colors.textSecondary,
+  },
+  likedScroll: {
+    paddingHorizontal: THEME.spacing.md,
+    gap: 12,
+  },
+  likedCard: {
+    width: 220,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  likedCardImage: {
+    width: '100%',
+    height: 110,
+  },
+  likedCardContent: {
+    padding: 10,
+  },
+  likedNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  likedCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: THEME.colors.textPrimary,
+    flex: 1,
+  },
+  likedStarPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF9C3',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 6,
+  },
+  likedStarNum: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#854D0E',
+  },
+  likedCardAddress: {
+    fontSize: 11,
+    color: THEME.colors.textSecondary,
+    marginBottom: 10,
+  },
+  likedQuickBook: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: THEME.colors.primary,
+    paddingVertical: 7,
+    borderRadius: THEME.radius.sm,
+  },
+  likedQuickBookText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   filterRow: {
     paddingHorizontal: THEME.spacing.md,
@@ -913,7 +1188,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: THEME.colors.textPrimary,
     textAlign: 'center',
-    numberOfLines: 1,
   },
   badgeCardDesc: {
     fontSize: 9,

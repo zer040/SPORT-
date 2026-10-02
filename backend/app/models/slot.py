@@ -43,6 +43,18 @@ class Slot(Base):
     )
     price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Yangi status modeli: AVAILABLE, LOCKED, BOOKED, MANUAL_BOOKED, BLOCKED
+    status: Mapped[str] = mapped_column(
+        String(20), default="AVAILABLE", server_default="AVAILABLE", index=True
+    )
+    # booking_source: APP, MANUAL_PHONE, SUBSCRIPTION
+    booking_source: Mapped[str] = mapped_column(
+        String(20), default="APP", server_default="APP"
+    )
+    booked_by_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    booked_by_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    is_recurring: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
     # 'auto' = tizim tomonidan generatsiya qilingan
     # 'manual' = maydon egasi tomonidan qo'shilgan
     # 'blocked' = maydon egasi tomonidan yopilgan (offline bron)

@@ -13,14 +13,19 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
 # Async engine — connection pooling bilan
+# PgBouncer / Supabase pooler uchun statement_cache_size=0 zarur
+connect_args = {
+    "statement_cache_size": 0,
+}
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=False,
-    pool_recycle=3600,
-    connect_args={"timeout": 1},
+    pool_size=10,
+    max_overflow=5,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args=connect_args,
 )
 
 # Session factory

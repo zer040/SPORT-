@@ -41,7 +41,8 @@ async def test_admin_dashboard_and_user_management():
         # 2. List users
         res_users = await client.get("/api/v1/admin/users", headers=headers)
         assert res_users.status_code == 200
-        users = res_users.json()
+        user_data = res_users.json()
+        users = user_data["items"] if isinstance(user_data, dict) and "items" in user_data else user_data
         assert isinstance(users, list)
         assert len(users) > 0
 

@@ -95,8 +95,8 @@ router = APIRouter()
 
 # ─── Admin Auth Helper ────────────────────────
 async def get_admin_user(
-    current_user: Optional[User] = Depends(get_current_user_optional),
-) -> User:
+    current_user: Optional[Any] = Depends(get_current_user_optional),
+) -> Any:
     """Admin huquqini tekshirish; faqat haqiqiy admin token bilan kirishga ruxsat beriladi."""
     if not current_user:
         raise HTTPException(
@@ -105,7 +105,11 @@ async def get_admin_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_role = str(getattr(current_user, "role", "")).lower()
+    if isinstance(current_user, dict):
+        user_role = str(current_user.get("role", "")).lower()
+    else:
+        user_role = str(getattr(current_user, "role", "") or "").lower()
+
     if user_role not in ("admin", "owner") and user_role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -121,6 +125,7 @@ async def get_admin_user(
     summary="Admin Dashboard — asosiy ko'rsatkichlar va moliyaviy tushumlar",
 )
 async def get_dashboard_stats(
+    admin: Any = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     total_users = 0
@@ -505,6 +510,7 @@ async def update_user_status(
     action_text = "faollashtirildi" if payload.is_active else "bloklandi"
     return {
         "success": True,
+        "status": "SUCCESS",
         "user_id": str(user_id),
         "full_name": full_name,
         "is_active": payload.is_active,
@@ -559,6 +565,7 @@ async def update_user_role(
 
     return {
         "success": True,
+        "status": "SUCCESS",
         "user_id": str(user_id),
         "full_name": full_name,
         "new_role": role_norm.upper(),
@@ -1408,9 +1415,9 @@ async def list_transactions(
                         venue_name=venue_name,
                         amount=float(b.total_price),
                         service_fee=float(b.service_fee) if b.service_fee else 10000.0,
-                        payment_status=b.payment_status,
-                        payment_provider=b.payment_provider or "Click / Payme",
-                        created_at=b.created_at,
+                        status=b.payment_status or "PAID",
+                        provider=b.payment_provider or "Click / Payme",
+                        created_at=b.created_at or datetime.now(timezone.utc),
                     )
                 )
         except Exception:
@@ -1418,6 +1425,7 @@ async def list_transactions(
 
     if not items:
         # Fallback transactions
+        now_dt = datetime.now(timezone.utc)
         items = [
             AdminTransactionItem(
                 id="tx-101",
@@ -1427,8 +1435,9 @@ async def list_transactions(
                 venue_name="Bunyodkor Arena",
                 amount=120000.0,
                 service_fee=10000.0,
-                payment_status="PAID",
-                payment_provider="Click",
+                status="PAID",
+                provider="Click",
+                created_at=now_dt,
             ),
             AdminTransactionItem(
                 id="tx-102",
@@ -1438,8 +1447,9 @@ async def list_transactions(
                 venue_name="Olimpiya Sport Majmuasi",
                 amount=150000.0,
                 service_fee=10000.0,
-                payment_status="PAID",
-                payment_provider="Payme",
+                status="PAID",
+                provider="Payme",
+                created_at=now_dt,
             ),
             AdminTransactionItem(
                 id="tx-103",
@@ -1449,8 +1459,9 @@ async def list_transactions(
                 venue_name="Spartak Arena",
                 amount=90000.0,
                 service_fee=10000.0,
-                payment_status="UNPAID",
-                payment_provider="Click",
+                status="UNPAID",
+                provider="Click",
+                created_at=now_dt,
             ),
         ]
 
