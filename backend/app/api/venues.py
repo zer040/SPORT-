@@ -15,6 +15,7 @@ from app.core.auth import UserRole, get_current_user, get_current_user_optional,
 from app.core.database import get_db
 from app.core.exceptions import VenueNotFoundError
 from app.models.booking import Booking
+from app.models.pitch import Pitch
 from app.models.review import Review
 from app.models.user import User
 from app.models.venue import Venue

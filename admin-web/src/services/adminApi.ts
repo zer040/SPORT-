@@ -1,5 +1,6 @@
 /**
  * Admin API Client — Sport+ Backend integratsiyasi.
+ * Barcha so'rovlar xatosiz va to'liq himoyalangan formatda qaytariladi.
  */
 
 const API_BASE = 'http://localhost:8000/api/v1/admin';
@@ -54,16 +55,18 @@ export interface DashboardStats {
 
 export interface AdminUser {
   id: string;
-  telegram_id?: number;
+  telegram_id?: number | null;
   full_name: string;
-  first_name?: string;
-  last_name?: string;
-  phone_number?: string;
-  role: 'USER' | 'OWNER' | 'ADMIN' | string;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone_number?: string | null;
+  role: 'player' | 'owner' | 'admin' | string;
   is_active: boolean;
   rating: number;
   total_games: number;
-  created_at?: string;
+  venues_count?: number;
+  bookings_count?: number;
+  created_at?: string | null;
 }
 
 export interface AdminVenue {
@@ -96,33 +99,42 @@ export interface AdminTransaction {
   payment_provider?: string;
   created_at?: string;
 }
+
 export const AdminApi = {
   async getLiveMetrics(): Promise<LiveMetrics> {
     try {
       const res = await fetch(`${API_BASE}/analytics/live-metrics`, { credentials: 'omit', headers: getHeaders() });
       if (!res.ok) throw new Error('Live metrics fetch failed');
-      return await res.json();
+      const data = await res.json();
+      return {
+        online_users_now: data.online_users_now ?? 0,
+        app_installations: {
+          total: data.app_installations?.total ?? 0,
+          android: data.app_installations?.android ?? 0,
+          ios: data.app_installations?.ios ?? 0,
+        },
+        users: {
+          total_registered: data.users?.total_registered ?? 0,
+        },
+        venues: {
+          total_active: data.venues?.total_active ?? 0,
+        },
+        financials: {
+          platform_revenue_uzs: Number(data.financials?.platform_revenue_uzs ?? 0),
+        },
+        bookings: {
+          currently_held: data.bookings?.currently_held ?? 0,
+          total_confirmed: data.bookings?.total_confirmed ?? 0,
+        },
+      };
     } catch {
       return {
         online_users_now: 0,
-        app_installations: {
-          total: 0,
-          android: 0,
-          ios: 0,
-        },
-        users: {
-          total_registered: 0,
-        },
-        venues: {
-          total_active: 0,
-        },
-        financials: {
-          platform_revenue_uzs: 0.0,
-        },
-        bookings: {
-          currently_held: 0,
-          total_confirmed: 0,
-        },
+        app_installations: { total: 0, android: 0, ios: 0 },
+        users: { total_registered: 0 },
+        venues: { total_active: 0 },
+        financials: { platform_revenue_uzs: 0.0 },
+        bookings: { currently_held: 0, total_confirmed: 0 },
       };
     }
   },
@@ -131,7 +143,17 @@ export const AdminApi = {
     try {
       const res = await fetch(`${API_BASE}/dashboard-stats`, { credentials: 'omit', headers: getHeaders() });
       if (!res.ok) throw new Error('Stats fetch failed');
-      return await res.json();
+      const data = await res.json();
+      return {
+        total_users: data.total_users ?? 0,
+        total_venues: data.total_venues ?? 0,
+        active_venues: data.active_venues ?? 0,
+        total_bookings: data.total_bookings ?? 0,
+        confirmed_bookings: data.confirmed_bookings ?? 0,
+        total_platform_revenue_uzs: Number(data.total_platform_revenue_uzs ?? 0),
+        occupancy_rate: Number(data.occupancy_rate ?? 0),
+        total_matches: data.total_matches ?? 0,
+      };
     } catch {
       return {
         total_users: 0,
@@ -149,27 +171,47 @@ export const AdminApi = {
   async getUsers(q?: string, role?: string): Promise<AdminUser[]> {
     try {
       const params = new URLSearchParams();
-      if (q) params.append('q', q);
-      if (role && role !== 'ALL') params.append('role', role);
+      // Backend 'query' parametrini kutadi (q emas)
+      if (q && q.trim()) params.append('query', q.trim());
+      if (role && role !== 'ALL') {
+        const rNorm = role.toLowerCase() === 'user' ? 'player' : role.toLowerCase();
+        params.append('role', rNorm);
+      }
 
       const res = await fetch(`${API_BASE}/users?${params.toString()}`, { credentials: 'omit', headers: getHeaders() });
-      if (!res.ok) throw new Error('Users fetch failed');
-      return await res.json();
-    } catch {
-      return [
-        { id: 'usr-1', telegram_id: 991827364, full_name: 'Alisher Karimov', first_name: 'Alisher', last_name: 'Karimov', phone_number: '+998901234567', role: 'ADMIN', is_active: true, rating: 5.0, total_games: 28 },
-        { id: 'usr-2', telegram_id: 882736192, full_name: 'Jamshid Normatov', first_name: 'Jamshid', last_name: 'Normatov', phone_number: '+998912345678', role: 'OWNER', is_active: true, rating: 4.8, total_games: 14 },
-        { id: 'usr-3', telegram_id: 773829104, full_name: 'Bobur Mirzayev', first_name: 'Bobur', last_name: 'Mirzayev', phone_number: '+998933456789', role: 'USER', is_active: true, rating: 4.9, total_games: 8 },
-        { id: 'usr-4', telegram_id: 664928173, full_name: 'Sanjar Rahimov', first_name: 'Sanjar', last_name: 'Rahimov', phone_number: '+998971239876', role: 'USER', is_active: true, rating: 4.7, total_games: 5 },
-      ];
+      if (!res.ok) {
+        console.warn('Users fetch failed:', res.status, res.statusText);
+        throw new Error(`Users fetch failed: ${res.status}`);
+      }
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.items || []);
+      return list.map((u: any) => ({
+        id: String(u.id || ''),
+        telegram_id: u.telegram_id ?? null,
+        full_name: u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || 'User',
+        first_name: u.first_name ?? null,
+        last_name: u.last_name ?? null,
+        phone_number: u.phone_number ?? null,
+        role: String(u.role || 'player').toLowerCase(),
+        is_active: Boolean(u.is_active ?? true),
+        rating: typeof u.rating === 'number' ? u.rating : 5.0,
+        total_games: typeof u.total_games === 'number' ? u.total_games : 0,
+        venues_count: typeof u.venues_count === 'number' ? u.venues_count : 0,
+        bookings_count: typeof u.bookings_count === 'number' ? u.bookings_count : 0,
+        created_at: u.created_at ?? null,
+      }));
+    } catch (err) {
+      console.warn('getUsers failed:', err);
+      return [];
     }
   },
 
   async updateUserRole(userId: string, role: string): Promise<boolean> {
+    const roleToSend = role.toLowerCase() === 'user' ? 'player' : role.toLowerCase();
     const res = await fetch(`${API_BASE}/users/${userId}/role`, {
       method: 'PATCH',
       headers: getHeaders(),
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ role: roleToSend }),
     });
     return res.ok;
   },
@@ -187,43 +229,27 @@ export const AdminApi = {
     try {
       const res = await fetch(`${API_BASE}/venues`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Venues fetch failed');
-      return await res.json();
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.items || []);
+      return list.map((v: any) => ({
+        id: String(v.id || ''),
+        name: v.name || 'Unnamed Venue',
+        address: v.address || '',
+        city: v.city || 'Tashkent',
+        district: v.district,
+        lat: v.lat,
+        lng: v.lng,
+        owner_id: v.owner_id,
+        owner_name: v.owner_name,
+        owner_phone: v.owner_phone,
+        is_active: Boolean(v.is_active ?? true),
+        pitches_count: v.pitches_count || (v.pitches ? v.pitches.length : 0),
+        primary_image_url: v.primary_image_url || (v.images && v.images.length > 0 ? v.images[0] : ''),
+        images: v.images || [],
+        created_at: v.created_at,
+      }));
     } catch {
-      return [
-        {
-          id: 'v-1',
-          name: 'Bunyodkor Arena (7x7)',
-          address: 'Chilonzor ko\'chasi 45, Toshkent',
-          city: 'Toshkent',
-          district: 'Chilonzor',
-          owner_name: 'Jamshid Normatov',
-          owner_phone: '+998912345678',
-          is_active: true,
-          pitches_count: 2,
-          primary_image_url: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=800&q=80',
-          ],
-        },
-        {
-          id: 'v-2',
-          name: 'Olimpiya Sport Majmuasi',
-          address: 'Yunusobod 14-mavze, Toshkent',
-          city: 'Toshkent',
-          district: 'Yunusobod',
-          owner_name: 'Alisher Karimov',
-          owner_phone: '+998901234567',
-          is_active: true,
-          pitches_count: 3,
-          primary_image_url: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
-          images: [
-            'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=800&q=80',
-          ],
-        },
-      ];
+      return [];
     }
   },
 
@@ -248,7 +274,7 @@ export const AdminApi = {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Stadion qo\'shishda xatolik');
+      throw new Error(err.detail || 'Failed to create venue');
     }
     return await res.json();
   },
@@ -263,17 +289,29 @@ export const AdminApi = {
 
   async getTransactions(status?: string): Promise<AdminTransaction[]> {
     try {
-      const params = status && status !== 'ALL' ? `?status=${status}` : '';
-      const res = await fetch(`${API_BASE}/transactions${params}`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Transactions fetch failed');
-      return await res.json();
+      // Backend path: /finance/transactions
+      const params = status && status !== 'ALL' ? `?status_filter=${status}` : '';
+      const res = await fetch(`${API_BASE}/finance/transactions${params}`, { headers: getHeaders() });
+      if (!res.ok) {
+        console.warn('Transactions fetch failed:', res.status);
+        throw new Error(`Transactions fetch failed: ${res.status}`);
+      }
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.items || []);
+      return list.map((t: any) => ({
+        id: String(t.id || ''),
+        booking_id: t.booking_id || '',
+        user_name: t.user_name || 'Unknown',
+        user_phone: t.user_phone || '',
+        venue_name: t.venue_name || '',
+        amount: Number(t.amount ?? 0),
+        service_fee: Number(t.service_fee ?? 10000),
+        payment_status: String(t.payment_status || t.status || 'PAID'),
+        payment_provider: String(t.payment_provider || t.provider || 'Click'),
+        created_at: t.created_at,
+      }));
     } catch {
-      return [
-        { id: 'tx-1', booking_id: 'b-101', user_name: 'Sanjar Rahimov', user_phone: '+998971239876', venue_name: 'Bunyodkor Arena (7x7)', amount: 140000, service_fee: 10000, payment_status: 'PAID', payment_provider: 'Click', created_at: '2026-09-29T10:30:00Z' },
-        { id: 'tx-2', booking_id: 'b-102', user_name: 'Bobur Mirzayev', user_phone: '+998933456789', venue_name: 'Olimpiya Sport Majmuasi', amount: 160000, service_fee: 10000, payment_status: 'PAID', payment_provider: 'Payme', created_at: '2026-09-29T11:45:00Z' },
-        { id: 'tx-3', booking_id: 'b-103', user_name: 'Alisher Karimov', user_phone: '+998901234567', venue_name: 'Bunyodkor Arena (7x7)', amount: 120000, service_fee: 10000, payment_status: 'PAID', payment_provider: 'Click', created_at: '2026-09-29T13:15:00Z' },
-        { id: 'tx-4', booking_id: 'b-104', user_name: 'Jasur Saidov', user_phone: '+998944567890', venue_name: 'Spartak Arena', amount: 90000, service_fee: 10000, payment_status: 'UNPAID', payment_provider: 'Payme', created_at: '2026-09-29T14:00:00Z' },
-      ];
+      return [];
     }
   },
 
@@ -281,12 +319,16 @@ export const AdminApi = {
     try {
       const res = await fetch(`${API_BASE}/owners`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Owners fetch failed');
-      return await res.json();
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.items || []);
+      return list.map((o: any) => ({
+        id: String(o.id || ''),
+        full_name: o.full_name || 'Owner',
+        phone_number: o.phone_number || '',
+        role: String(o.role || 'owner'),
+      }));
     } catch {
-      return [
-        { id: 'usr-2', full_name: 'Jamshid Normatov', phone_number: '+998912345678', role: 'OWNER' },
-        { id: 'usr-1', full_name: 'Alisher Karimov', phone_number: '+998901234567', role: 'ADMIN' },
-      ];
+      return [];
     }
   },
 };

@@ -11,6 +11,7 @@ import {
   Linking,
   Animated,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Api } from '../services/api';
@@ -358,6 +359,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         )}
 
         <View style={styles.brandTitleWrap}>
+          <Image
+            source={require('../assets/logo-light.png')}
+            style={{ width: 22, height: 22, marginRight: 6 }}
+            resizeMode="contain"
+          />
           <Text style={styles.brandTitle}>SPORT+</Text>
         </View>
 
@@ -764,7 +770,9 @@ const styles = StyleSheet.create({
     height: 40,
   },
   brandTitleWrap: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   brandTitle: {
     fontSize: 16,

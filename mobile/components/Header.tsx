@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../constants/theme';
 
@@ -21,7 +21,11 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Brand Logo only — no subtitle clutter */}
       <View style={styles.logoBadge}>
         <View style={styles.logoIcon}>
-          <Ionicons name="football" size={18} color={THEME.colors.primary} />
+          <Image
+            source={require('../assets/logo-light.png')}
+            style={{ width: 22, height: 22 }}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.logoText}>
           SPORT<Text style={styles.plusSign}>+</Text>

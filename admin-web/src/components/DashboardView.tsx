@@ -44,7 +44,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
     },
   });
 
-  const [lastUpdated, setLastUpdated] = useState<string>('Hozir');
+  const [lastUpdated, setLastUpdated] = useState<string>('Just now');
   const [liveLoading, setLiveLoading] = useState(false);
 
   const fetchLiveMetrics = async () => {
@@ -91,39 +91,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
       {/* Monetization Highlight Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6 border border-slate-700/80 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-        <div className="space-y-1.5 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
-            <Sparkles size={13} />
-            <span>Monetizatsiya & Real-Vaqt Tizimi</span>
-          </div>
+        <div className="z-10">
           <h3 className="text-xl font-extrabold tracking-tight">
-            Har bir bron qilingan slotdan 10,000 UZS qatʼiy platforma xizmat haqi
+            Service Fee: 10,000 UZS / slot
           </h3>
-          <p className="text-slate-400 text-sm max-w-2xl">
-            Hech qanday yasama raqamlarsiz: barcha statistika PostgreSQL va Redis xotirasidagi real vaqt
-            hodisalariga 100% bog'langan.
-          </p>
         </div>
-        <div className="bg-slate-950/70 border border-slate-700 rounded-xl p-4 shrink-0 text-right z-10">
-          <div className="flex items-center justify-end gap-1.5 mb-1 text-xs text-slate-400 font-semibold uppercase tracking-wider">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>Real Tushum (10,000 UZS)</span>
+        <div className="bg-slate-950/70 border border-slate-700 rounded-xl px-5 py-3 shrink-0 text-right z-10">
+          <div className="text-xs text-slate-400 font-semibold mb-0.5">
+            Total Revenue
           </div>
           <p className="text-2xl font-black text-emerald-400">{revenueDisplay}</p>
-          <p className="text-[11px] text-slate-400 mt-1">So'nggi yangilanish: {lastUpdated}</p>
         </div>
       </div>
 
-      {/* 4 PRIMARY REAL-TIME KPI CARDS (TALAB QILINGAN KARTALAR) */}
+      {/* 4 PRIMARY REAL-TIME KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* KARTA 1: Yashil Pulsatsion "Online Now" Kartasi */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        {/* KARTA 1: Online */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Ayni Damda Online
+              Online
             </span>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-black">
               <span className="relative flex h-2 w-2">
@@ -133,47 +120,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
               <span>LIVE</span>
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 tracking-tight flex items-baseline gap-2">
-              <span>{live.online_users_now}</span>
-              <span className="text-sm font-semibold text-slate-500">user</span>
-            </div>
-            <p className="text-xs text-emerald-700 font-medium flex items-center gap-1">
-              <Radio size={12} className="text-emerald-500 animate-pulse" />
-              <span>Oxirgi 120s da faol ping yuborganlar</span>
-            </p>
+          <div className="text-3xl font-black text-slate-900 tracking-tight">
+            {live.online_users_now}
           </div>
         </div>
 
-        {/* KARTA 2: "App Installs" (Qurilmalar va Yuklab Olishlar) */}
+        {/* KARTA 2: Installs */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              App Installs
+              Installs
             </span>
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Smartphone size={20} />
             </div>
           </div>
           <div className="space-y-1">
-            <div className="text-3xl font-black text-slate-900 tracking-tight flex items-baseline gap-2">
-              <span>{live.app_installations.total}</span>
-              <span className="text-sm font-semibold text-slate-500">ta qurilma</span>
+            <div className="text-3xl font-black text-slate-900 tracking-tight">
+              {live.app_installations.total}
             </div>
-            <div className="text-xs text-slate-500 font-semibold flex items-center gap-3 pt-0.5">
-              <span className="inline-flex items-center gap-1 text-slate-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                Android: <strong className="text-slate-900">{live.app_installations.android}</strong>
-              </span>
-              <span className="inline-flex items-center gap-1 text-slate-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                iOS: <strong className="text-slate-900">{live.app_installations.ios}</strong>
-              </span>
+            <div className="text-xs text-slate-500 font-medium">
+              Android: {live.app_installations.android} • iOS: {live.app_installations.ios}
             </div>
           </div>
         </div>
 
-        {/* KARTA 3: "Platform Revenue (10,000 UZS Servis To'lovi)" */}
+        {/* KARTA 3: Platform Revenue */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -183,55 +155,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
               <DollarSign size={20} />
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-black text-slate-900 tracking-tight truncate">
-              {revenueDisplay}
-            </div>
-            <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-              <TrendingUp size={13} />
-              <span>Har to‘lovdan 10,000 UZS aniq tushum</span>
-            </p>
+          <div className="text-2xl font-black text-slate-900 tracking-tight truncate">
+            {revenueDisplay}
           </div>
         </div>
 
-        {/* KARTA 4: "Jonli Bronlar (Held vs Confirmed)" */}
+        {/* KARTA 4: Active Bookings */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between pb-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Jonli Bronlar
+              Active Bookings
             </span>
             <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <CalendarCheck size={20} />
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-black text-slate-900 tracking-tight flex items-baseline gap-2">
-              <span className="text-amber-600">{live.bookings.currently_held}</span>
-              <span className="text-xs text-slate-400 font-bold uppercase">held</span>
-              <span className="text-slate-300">/</span>
-              <span className="text-emerald-600">{live.bookings.total_confirmed}</span>
-              <span className="text-xs text-slate-400 font-bold uppercase">ok</span>
-            </div>
-            <p className="text-xs text-amber-700 font-medium">
-              {live.bookings.currently_held} ta o‘yin 10 daqiqalik lockda
-            </p>
+          <div className="text-2xl font-black text-slate-900 tracking-tight">
+            {live.bookings.currently_held + live.bookings.total_confirmed}
           </div>
         </div>
       </div>
 
-      {/* SECONDARY ROW: REGISTRATION, VENUES, OCCUPANCY, MATCHES */}
+      {/* SECONDARY ROW: USERS, VENUES, OCCUPANCY */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <Users size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ro'yxatdan O'tganlar</p>
-            <p className="text-xl font-black text-slate-900">
-              {live.users.total_registered > 0 ? live.users.total_registered : s.total_users}{' '}
-              <span className="text-xs font-semibold text-slate-500">foydalanuvchi</span>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Users</p>
+            <p className="text-2xl font-black text-slate-900 mt-0.5">
+              {live.users.total_registered > 0 ? live.users.total_registered : s.total_users}
             </p>
-            <p className="text-[11px] text-slate-500">Telegram orqali ro'yxatdan o'tgan haqiqiy hisoblar</p>
           </div>
         </div>
 
@@ -240,12 +195,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             <Building2 size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Faol Stadionlar</p>
-            <p className="text-xl font-black text-slate-900">
-              {live.venues.total_active}{' '}
-              <span className="text-xs font-semibold text-slate-500">ta sport majmuasi</span>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Venues</p>
+            <p className="text-2xl font-black text-slate-900 mt-0.5">
+              {live.venues.total_active}
             </p>
-            <p className="text-[11px] text-slate-500">PostGIS geolokatsiyasi va maydonlari biriktirilgan</p>
           </div>
         </div>
 
@@ -254,33 +207,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             <Percent size={22} />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">O'rtacha Bandlik</p>
-            <p className="text-xl font-black text-slate-900">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Occupancy</p>
+            <p className="text-2xl font-black text-slate-900 mt-0.5">
               {s.occupancy_rate}%
             </p>
-            <p className="text-[11px] text-slate-500">Maydonlarning tasdiqlangan o'yinlar bilan to'lish ulushi</p>
           </div>
         </div>
       </div>
 
       {/* DETAIL BREAKDOWN SECTIONS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tushum davrlari & Monetizatsiya kafolati */}
+        {/* Revenue Dynamics */}
         <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-base font-extrabold text-slate-900">Platforma Tushumi Dinamikasi</h4>
-              <p className="text-xs text-slate-500">10,000 UZS kafolatli to'lovlar kesimida</p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-              <Activity size={13} className="text-emerald-600" />
-              <span>Jonli Rekonsiliatsiya</span>
-            </span>
+            <h4 className="text-base font-extrabold text-slate-900">Revenue Dynamics</h4>
           </div>
 
           <div className="grid grid-cols-3 gap-4 pt-2">
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase">Jami Servis Tushumi</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Total Service Revenue</span>
               <p className="text-xl font-extrabold text-slate-900 mt-1 truncate">
                 {live.financials.platform_revenue_uzs.toLocaleString()} <span className="text-xs text-slate-400 font-medium">UZS</span>
               </p>
@@ -293,9 +238,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase">Tasdiqlangan Bronlar</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Confirmed Bookings</span>
               <p className="text-xl font-extrabold text-slate-900 mt-1">
-                {live.bookings.total_confirmed} <span className="text-xs text-slate-400 font-medium">ta</span>
+                {live.bookings.total_confirmed}
               </p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div
@@ -311,9 +256,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase">HELD (To'lov Kutilmoqda)</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">Held (Pending Payment)</span>
               <p className="text-xl font-extrabold text-amber-600 mt-1">
-                {live.bookings.currently_held} <span className="text-xs text-slate-400 font-medium">ta</span>
+                {live.bookings.currently_held}
               </p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div
@@ -328,26 +273,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
               </div>
             </div>
           </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between text-xs text-slate-600">
-            <span>Click va Payme integratsiyasi orqali har bir slot uchun 10,000 UZS avtomatik yoziladi.</span>
-            <span className="font-bold text-slate-900">Redis Presense: Faol</span>
-          </div>
         </div>
 
-        {/* Bronlar va Statuslar Taqsimoti */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-5">
-          <h4 className="text-base font-extrabold text-slate-900">Bronlar Taqsimoti</h4>
-          <p className="text-xs text-slate-500 -mt-3">Real-vaqt holati bo'yicha</p>
+        {/* Bookings Distribution */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <h4 className="text-base font-extrabold text-slate-900">Bookings Distribution</h4>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
               <div className="flex items-center gap-3">
                 <CheckCircle2 size={18} className="text-emerald-600" />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Tasdiqlangan Bronlar</p>
-                  <p className="text-[11px] text-slate-500">Muvaffaqiyatli to'langan (CONFIRMED)</p>
-                </div>
+                <p className="text-xs font-bold text-slate-900">Confirmed bookings</p>
               </div>
               <span className="text-base font-black text-emerald-700">{live.bookings.total_confirmed}</span>
             </div>
@@ -355,10 +291,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-50/60 border border-amber-100">
               <div className="flex items-center gap-3">
                 <CalendarCheck size={18} className="text-amber-600" />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">HELD (To'lov Kutayotgan)</p>
-                  <p className="text-[11px] text-slate-500">10 daqiqalik qulf holatida</p>
-                </div>
+                <p className="text-xs font-bold text-slate-900">Pending bookings</p>
               </div>
               <span className="text-base font-black text-amber-700">{live.bookings.currently_held}</span>
             </div>
@@ -366,18 +299,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-blue-50/60 border border-blue-100">
               <div className="flex items-center gap-3">
                 <Smartphone size={18} className="text-blue-600" />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Unikal Qurilmalar</p>
-                  <p className="text-[11px] text-slate-500">Ilovani o'rnatganlar</p>
-                </div>
+                <p className="text-xs font-bold text-slate-900">Unique devices</p>
               </div>
               <span className="text-base font-black text-blue-700">{live.app_installations.total}</span>
             </div>
-          </div>
-
-          <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
-            <span className="text-slate-500">Solo Play Lobbylar:</span>
-            <span className="font-bold text-slate-900">{s.total_matches} ta faol match</span>
           </div>
         </div>
       </div>

@@ -12,6 +12,30 @@
 
 ---
 
+## 🧠 Agent Operating Directive (Claude Reasoning Pattern)
+
+Har bir topshiriqni bajarishda quyidagi chuqur fikrlash va qat'iy agentlik tamoyillariga amal qilinadi:
+
+1. **Think Before You Act (Scratchpad / CoT)**:
+   - Hech qachon asossiz kod yozmang yoki vositalarni ko'r-ko'rona ishga tushirmang.
+   - Avval mavjud arxitekturani tahlil qiling (FastAPI backend, Expo/React Native mobile, Vite/React admin-web, Supabase PostgreSQL).
+   - Fikrlash (thinking) bloki ichida bosqichma-bosqich gipoteza va rejani aniqlang.
+
+2. **Minimal Surgical Diffs (Preserve Existing Code)**:
+   - 5-10 qator o'zgarish uchun butun faylni qayta yozib tashlamang.
+   - Mavjud konfiguratsiyalar, kommentlar, docstringlar va uslublarni saqlang.
+   - Faqat nishonga olingan aniq diff / almashtirishlarni qo'llang.
+
+3. **Autonomous Verification Loop (O'z-o'zini Tekshirish)**:
+   - Backend yoki DB o'zgarganda: `python -m py_compile` bilan sintaksis tekshiring, loglarni ko'ring.
+   - Frontend o'zgarganda: `tsc` / `npm run build` bilan tekshiring.
+   - Agar xatolik (500, fetch failed, syntax error) yuz bersa, foydalanuvchidan so'ramasdan o'zingiz ildiz sababini aniqlab avtonom tuzating.
+
+4. **Lakonik va Texnik Aloqa**:
+   - Ortiqcha gaplarsiz, aniq texnik natijalar va fayl havolalari bilan javob bering.
+
+---
+
 ## Sub-Agent Ishlatish Qoidalari
 
 Bu loyihada quyidagi sub-agent skilllardan foydalaning (`~/.gemini/config/skills/agents/`):

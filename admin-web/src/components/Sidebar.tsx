@@ -18,10 +18,10 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => {
   const menuItems = [
-    { id: 'dashboard' as AdminTab, label: 'Boshqaruv & Tahlil', icon: LayoutDashboard },
-    { id: 'venues' as AdminTab, label: 'Stadionlar & Maydonlar', icon: Building2 },
-    { id: 'users' as AdminTab, label: 'Foydalanuvchilar & Rollar', icon: Users },
-    { id: 'transactions' as AdminTab, label: 'Moliya & To‘lovlar', icon: CreditCard },
+    { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'venues' as AdminTab, label: 'Venues', icon: Building2 },
+    { id: 'users' as AdminTab, label: 'Users', icon: Users },
+    { id: 'transactions' as AdminTab, label: 'Finance', icon: CreditCard },
   ];
 
   return (
@@ -30,12 +30,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => 
         {/* Brand Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-400 to-cyan-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20">
-              S+
+            <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 p-1.5 flex items-center justify-center shadow-lg shadow-black/20">
+              <img src="/logo-dark.png" alt="SPORT+" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-white font-extrabold text-lg tracking-tight leading-none">SPORT+</h1>
-              <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Admin Boshqaruv</span>
+              <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Admin Console</span>
             </div>
           </div>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">v1.2</span>
@@ -44,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => 
         {/* Navigation Items */}
         <div className="px-3 py-6 space-y-1.5">
           <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Asosiy Bo'limlar
+            Main Menu
           </div>
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -74,8 +74,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => 
             AD
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">Bosh Administrator</p>
-            <p className="text-[11px] text-slate-400 truncate">Super Admin huquqi</p>
+            <p className="text-xs font-bold text-white truncate">Super Administrator</p>
+            <p className="text-[11px] text-slate-400 truncate">Full Access</p>
           </div>
           <ShieldCheck size={16} className="text-emerald-400" />
         </div>

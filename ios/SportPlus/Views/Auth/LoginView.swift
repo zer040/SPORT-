@@ -23,9 +23,10 @@ public struct LoginView: View {
                             .fill(SportPlusTheme.primary.opacity(0.12))
                             .frame(width: 88, height: 88)
                         
-                        Image(systemName: "figure.indoor.soccer")
-                            .font(.system(size: 42))
-                            .foregroundColor(SportPlusTheme.primary)
+                        Image("LogoLight")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 52, height: 52)
                     }
                     
                     Text("SPORT+")

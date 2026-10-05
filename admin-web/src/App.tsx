@@ -52,23 +52,23 @@ export function App() {
     switch (currentTab) {
       case 'dashboard':
         return {
-          title: 'Asosiy Boshqaruv & Tahlil',
-          subtitle: 'Sport+ platformasi real-vaqt monitoringi va ko‘rsatkichlari',
+          title: 'Dashboard',
+          subtitle: '',
         };
       case 'venues':
         return {
-          title: 'Stadionlar & Maydonlar Boshqaruvi',
-          subtitle: 'Yangi maydonlar qo‘shish, formatlar va egalarni biriktirish',
+          title: 'Venues',
+          subtitle: '',
         };
       case 'users':
         return {
-          title: 'Foydalanuvchilar & RBAC Rollar',
-          subtitle: 'Telegram foydalanuvchilar ro‘yxati, rollar va xavfsizlik nazorati',
+          title: 'Users',
+          subtitle: '',
         };
       case 'transactions':
         return {
-          title: 'Moliya & Servis To‘lovlari',
-          subtitle: 'Click va Payme orqali 10,000 UZS platforma xizmat haqlari monitoringi',
+          title: 'Finance',
+          subtitle: '',
         };
     }
   };

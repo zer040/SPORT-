@@ -110,12 +110,14 @@ async def get_admin_user(
     else:
         user_role = str(getattr(current_user, "role", "") or "").lower()
 
-    if user_role not in ("admin", "owner") and user_role != "admin":
+    # admin yoki owner roli bilan kirishga ruxsat (uppercase ham qabul qilinadi)
+    if user_role not in ("admin", "owner"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Faqat administratorlar uchun ruxsat berilgan.",
         )
     return current_user
+
 
 
 # ─── Dashboard stat block from incoming branch ──────────────────────
@@ -1379,7 +1381,7 @@ async def delete_venue(
     response_model=List[AdminTransactionItem],
     summary="Platforma xizmat haqlari va to'lovlar monitoringi",
 )
-async def list_transactions(
+async def list_monitoring_transactions(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ):

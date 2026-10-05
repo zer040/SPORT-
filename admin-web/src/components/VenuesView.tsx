@@ -58,7 +58,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
   const handleCreateVenue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !address.trim()) {
-      setErrorMsg('Stadion nomi va manzilini to‘liq kiriting');
+      setErrorMsg('Please enter venue name and address');
       return;
     }
 
@@ -70,7 +70,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
     try {
       await AdminApi.createVenue({
         name: name.trim(),
-        description: description.trim() || `${name} zamonaviy sport stadioni`,
+        description: description.trim() || `${name} modern sports venue`,
         address: address.trim(),
         city: city.trim(),
         district: district.trim(),
@@ -91,14 +91,14 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
       setModalOpen(false);
       onRefresh();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Stadionni qo‘shishda xatolik');
+      setErrorMsg(err.message || 'Failed to create venue');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteVenue = async (venueId: string) => {
-    if (confirm('Ushbu stadionni ro‘yxatdan o‘chirishni / nofaol qilishni tasdiqlaysizmi?')) {
+    if (confirm('Are you sure you want to delete this venue?')) {
       await AdminApi.deleteVenue(venueId);
       onRefresh();
     }
@@ -107,89 +107,107 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header and Add Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">Stadionlar va Maydonlar</h3>
-          <p className="text-xs text-slate-500 font-medium">Barcha ro'yxatga olingan sport majmualari va egalari</p>
-        </div>
-
+      <div className="flex justify-end">
         <button
           onClick={() => setModalOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-md shadow-slate-900/10 transition-all active:scale-95"
         >
           <Plus size={16} className="text-emerald-400" />
-          <span>Yangi Stadion Qo'shish</span>
+          <span>+ New Venue</span>
         </button>
       </div>
 
       {/* Venues Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {venues.map((v) => (
-          <div
-            key={v.id}
-            className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col"
-          >
-            {/* Image Slider / Cover */}
-            <div className="h-44 bg-slate-100 relative overflow-hidden group">
-              {v.primary_image_url ? (
-                <img
-                  src={v.primary_image_url}
-                  alt={v.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-300">
-                  <Image size={40} />
-                </div>
-              )}
-              <div className="absolute top-3 right-3 flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-950/80 text-emerald-400 backdrop-blur-md border border-slate-700">
-                  {v.pitches_count} ta maydon
-                </span>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold backdrop-blur-md ${
-                  v.is_active ? 'bg-emerald-500/90 text-slate-950' : 'bg-slate-800 text-slate-300'
-                }`}>
-                  {v.is_active ? 'FAOL' : 'NOFAOL'}
-                </span>
+      {(() => {
+        const safeVenues = Array.isArray(venues) ? venues : [];
+        if (safeVenues.length === 0) {
+          return (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                <Building2 size={28} />
               </div>
+              <h4 className="text-base font-extrabold text-slate-800">No venues yet</h4>
+              <button
+                onClick={() => setModalOpen(true)}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
+              >
+                <Plus size={14} className="text-emerald-400" />
+                <span>+ New Venue</span>
+              </button>
             </div>
+          );
+        }
 
-            {/* Content Details */}
-            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-              <div>
-                <h4 className="text-base font-extrabold text-slate-900 leading-snug">{v.name}</h4>
-                <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
-                  <MapPin size={13} className="text-slate-400 shrink-0" />
-                  <span className="truncate">{v.address}</span>
-                </p>
-              </div>
-
-              {/* Owner Info & Actions */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
-                    <User size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">{v.owner_name || 'Ega biriktirilmagan'}</p>
-                    <p className="text-[10px] text-slate-400">{v.owner_phone || '+998...'}</p>
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {safeVenues.map((v) => (
+              <div
+                key={v.id}
+                className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col"
+              >
+                {/* Image Slider / Cover */}
+                <div className="h-44 bg-slate-100 relative overflow-hidden group">
+                  {v.primary_image_url ? (
+                    <img
+                      src={v.primary_image_url}
+                      alt={v.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-300">
+                      <Image size={40} />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-950/80 text-emerald-400 backdrop-blur-md border border-slate-700">
+                      {v.pitches_count} pitches
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold backdrop-blur-md ${
+                      v.is_active ? 'bg-emerald-500/90 text-slate-950' : 'bg-slate-800 text-slate-300'
+                    }`}>
+                      {v.is_active ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleDeleteVenue(v.id)}
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                  title="Stadionni o'chirish"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {/* Content Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <h4 className="text-base font-extrabold text-slate-900 leading-snug">{v.name}</h4>
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
+                      <MapPin size={13} className="text-slate-400 shrink-0" />
+                      <span className="truncate">{v.address}</span>
+                    </p>
+                  </div>
+
+                  {/* Owner Info & Actions */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                        <User size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-800 truncate">{v.owner_name || 'No owner assigned'}</p>
+                        <p className="text-[10px] text-slate-400">{v.owner_phone || '+998...'}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDeleteVenue(v.id)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Delete venue"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
-      {/* Modal: Yangi Stadion Qo'shish */}
+      {/* Modal: New Venue */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
@@ -199,8 +217,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                   <Building2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Yangi Stadion Qo'shish</h3>
-                  <p className="text-xs text-slate-500">Multi-image, format va lokatsiya parametrlari bilan</p>
+                  <h3 className="text-lg font-extrabold text-slate-900">New Venue</h3>
                 </div>
               </div>
               <button
@@ -218,21 +235,21 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 </div>
               )}
 
-              {/* Nomi & Tavsifi */}
+              {/* Name & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Stadion Nomi *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Venue Name *</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Masalan, Paxtakor Arena"
+                    placeholder="e.g. Pakhtakor Arena"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Shahar *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">City *</label>
                   <input
                     type="text"
                     required
@@ -244,34 +261,34 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">To'liq Manzil *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Full Address *</label>
                 <input
                   type="text"
                   required
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Chilonzor 9-mavze, 21-uy"
+                  placeholder="e.g. 21 Chilanzar 9th Block"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                 />
               </div>
 
-              {/* Format, Narx va Geolocation */}
+              {/* Format, Price and Geolocation */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Maydon Formati</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Pitch Format</label>
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white font-semibold"
                   >
                     <option value="5x5">5 x 5 (Mini)</option>
-                    <option value="7x7">7 x 7 (Standart)</option>
-                    <option value="11x11">11 x 11 (Katta)</option>
+                    <option value="7x7">7 x 7 (Standard)</option>
+                    <option value="11x11">11 x 11 (Full)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Soatlik Narx (UZS)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Hourly Rate (UZS)</label>
                   <input
                     type="number"
                     value={pricePerHour}
@@ -281,7 +298,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Latitude (Lat)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Latitude</label>
                   <input
                     type="text"
                     value={lat}
@@ -291,7 +308,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Longitude (Lng)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Longitude</label>
                   <input
                     type="text"
                     value={lng}
@@ -301,68 +318,68 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 </div>
               </div>
 
-              {/* Mas'ul Maydon Egasi */}
+              {/* Assigned Venue Owner */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Mas'ul Maydon Egasi (OWNER)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Assigned Venue Owner</label>
                 <select
                   value={ownerId}
                   onChange={(e) => setOwnerId(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white font-medium"
                 >
-                  <option value="">(Administrator sifatida o'zi)</option>
+                  <option value="">(Admin default)</option>
                   {owners.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.full_name} ({o.role}) — {o.phone_number || 'Tel yo‘q'}
+                      {o.full_name} ({o.role}) — {o.phone_number || 'No phone'}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Sharoitlar (Facilities) */}
+              {/* Amenities & Facilities */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Qulayliklar va Sharoitlar</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Amenities & Facilities</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
                     <input type="checkbox" checked={facilityShower} onChange={(e) => setFacilityShower(e.target.checked)} className="rounded text-emerald-600" />
-                    <span>Dush</span>
+                    <span>Shower</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
                     <input type="checkbox" checked={facilityLighting} onChange={(e) => setFacilityLighting(e.target.checked)} className="rounded text-emerald-600" />
-                    <span>Yoritish</span>
+                    <span>Lighting</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
                     <input type="checkbox" checked={facilityParking} onChange={(e) => setFacilityParking(e.target.checked)} className="rounded text-emerald-600" />
-                    <span>Avtoturargoh</span>
+                    <span>Parking</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
                     <input type="checkbox" checked={facilityChangingRoom} onChange={(e) => setFacilityChangingRoom(e.target.checked)} className="rounded text-emerald-600" />
-                    <span>Kiyinish xonasi</span>
+                    <span>Locker Room</span>
                   </label>
                 </div>
               </div>
 
-              {/* Multi-Image URLs (3 ta) */}
+              {/* Multi-Image URLs (3 URLs) */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700">Stadion Rasmlari (Slider uchun kamida 3 ta URL)</label>
+                <label className="block text-xs font-bold text-slate-700">Venue Photos (Image URLs)</label>
                 <input
                   type="url"
                   value={imageUrl1}
                   onChange={(e) => setImageUrl1(e.target.value)}
-                  placeholder="Rasm 1 URL (Asosiy)"
+                  placeholder="Photo 1 URL (Primary)"
                   className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-xs"
                 />
                 <input
                   type="url"
                   value={imageUrl2}
                   onChange={(e) => setImageUrl2(e.target.value)}
-                  placeholder="Rasm 2 URL"
+                  placeholder="Photo 2 URL"
                   className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-xs"
                 />
                 <input
                   type="url"
                   value={imageUrl3}
                   onChange={(e) => setImageUrl3(e.target.value)}
-                  placeholder="Rasm 3 URL"
+                  placeholder="Photo 3 URL"
                   className="w-full px-3.5 py-2 rounded-lg border border-slate-200 text-xs"
                 />
               </div>
@@ -374,14 +391,14 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                   onClick={() => setModalOpen(false)}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-bold"
                 >
-                  Bekor qilish
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold flex items-center gap-2 shadow-lg disabled:opacity-50"
                 >
-                  {submitting ? 'Saqlanmoqda...' : 'Stadionni Saqlash'}
+                  {submitting ? 'Saving...' : 'Save Venue'}
                 </button>
               </div>
             </form>

@@ -8,7 +8,7 @@ from typing import Optional
 import redis.asyncio as aioredis
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart, CommandObject
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 
 from app.config import settings
 
@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 # .env dan olinadi
 BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "8512689865:AAHxthvkE8fNFB-vJgWjDyxiiKGUGaE9PFw")
 REDIS_URL = settings.REDIS_URL or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# Rasmiy Sport+ bot logo yo'li
+BOT_LOGO_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "assets",
+    "telegram_bot_avatar_512.png"
+)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -57,9 +64,20 @@ async def handle_start(message: types.Message, command: CommandObject):
     )
 
     try:
-        await message.answer(text, parse_mode="HTML")
+        if os.path.exists(BOT_LOGO_PATH):
+            await message.answer_photo(
+                photo=FSInputFile(BOT_LOGO_PATH),
+                caption=text,
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(text, parse_mode="HTML")
     except Exception as err:
         logger.error(f"Telegramga xabar yuborishda xatolik: {err}")
+        try:
+            await message.answer(text, parse_mode="HTML")
+        except Exception:
+            pass
 
 @dp.message()
 async def handle_any_message(message: types.Message):
