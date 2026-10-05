@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand & Semantic Colors
@@ -51,7 +52,19 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: textPrimary),
       ),
-      fontFamily: 'Roboto',
+      textTheme: GoogleFonts.interTextTheme().apply(
+        bodyColor: textPrimary,
+        displayColor: textPrimary,
+      ),
     );
   }
+
+  // ─── Design Tokens ────────────────────────────────
+  static const double radiusCard = 22.0;
+  static const double radiusButton = 16.0;
+  static const double radiusChip = 20.0;
+  static const double radiusSmall = 12.0;
+
+  static const Color border = Color(0xFFE2E8F0); // Slate 200
+  static const Color borderLight = Color(0xFFF1F5F9); // Slate 100
 }

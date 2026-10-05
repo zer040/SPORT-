@@ -7,28 +7,58 @@ import {
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
   Linking,
   Animated,
   Dimensions,
-  Image,
+  StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5, Feather } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Api } from '../services/api';
 
 const { width } = Dimensions.get('window');
+
+// Safe LinearGradient fallback
+let NativeLinearGradient: any = null;
+try {
+  NativeLinearGradient = require('expo-linear-gradient').LinearGradient;
+} catch {
+  NativeLinearGradient = null;
+}
+
+const SafeGradient: React.FC<any> = ({ colors, style, children, start, end, ...props }) => {
+  if (NativeLinearGradient) {
+    return (
+      <NativeLinearGradient colors={colors} style={style} start={start} end={end} {...props}>
+        {children}
+      </NativeLinearGradient>
+    );
+  }
+  const primaryColor = colors?.[0] || '#0F172A';
+  return (
+    <View style={[{ backgroundColor: primaryColor }, style]} {...props}>
+      {children}
+    </View>
+  );
+};
 
 interface LoginScreenProps {
   onLoginSuccess: (authData: any) => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({
-  onLoginSuccess,
-}) => {
-  const [step, setStep] = useState<'login' | 'otp' | 'register'>('login');
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
-  // 'player' — Telegram OTP (asosiy), 'staff' — Owner/Admin username+parol
+type AuthStep = 'welcome' | 'login' | 'otp' | 'register';
+
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+  const [step, setStep] = useState<AuthStep>('welcome');
   const [authMode, setAuthMode] = useState<'player' | 'staff'>('player');
+
+  // Player / Telegram Auth state
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [telegramDeepLink, setTelegramDeepLink] = useState<string | null>(null);
+  const [telegramWebLink, setTelegramWebLink] = useState<string | null>(null);
 
   // Staff (Owner/Admin) login state
   const [staffUsername, setStaffUsername] = useState('');
@@ -36,100 +66,70 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [staffPasswordVisible, setStaffPasswordVisible] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
 
-  // Telegram Auth state
-  const BOT_USERNAME = 'sport_plus_uz_bot';
-
   // Registration state for new users
   const [pendingTelegramId, setPendingTelegramId] = useState<number | null>(null);
   const [regFirstName, setRegFirstName] = useState('');
   const [regLastName, setRegLastName] = useState('');
   const [regPhone, setRegPhone] = useState('+998');
 
-  // OTP input state
+  // Kinetic OTP state
   const [otpCode, setOtpCode] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const otpInputRef = useRef<TextInput>(null);
   const cursorOpacity = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [hasError, setHasError] = useState(false);
+  // Welcome screen animations
+  const welcomeScale = useRef(new Animated.Value(0.85)).current;
+  const welcomeOpacity = useRef(new Animated.Value(0)).current;
+  const logoGlow = useRef(new Animated.Value(0)).current;
 
-  // Soft ambient pulse animation
-  const ambientPulse = useRef(new Animated.Value(0)).current;
+  // Pulse animation for status indicator
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Welcome screen entrance animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(welcomeScale, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true }),
+      Animated.timing(welcomeOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+    ]).start();
+
+    // Logo glow pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoGlow, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(logoGlow, { toValue: 0, duration: 2000, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(ambientPulse, {
-          toValue: 1,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ambientPulse, {
-          toValue: 0,
-          duration: 4000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(pulseAnim, { toValue: 0.35, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
       ])
     ).start();
-  }, [ambientPulse]);
+  }, [pulseAnim]);
 
-  // Blinking neon cursor animation for active OTP cell
+  // Neon blinking cursor for OTP
   useEffect(() => {
-    const cursorAnim = Animated.loop(
+    const cursorLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(cursorOpacity, {
-          toValue: 0,
-          duration: 450,
-          useNativeDriver: true,
-        }),
-        Animated.timing(cursorOpacity, {
-          toValue: 1,
-          duration: 450,
-          useNativeDriver: true,
-        }),
+        Animated.timing(cursorOpacity, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(cursorOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
       ])
     );
-    cursorAnim.start();
-    return () => cursorAnim.stop();
+    cursorLoop.start();
+    return () => cursorLoop.stop();
   }, [cursorOpacity]);
 
-  // Focus input automatically when stepping into 'otp'
+  // Auto-focus OTP input on step switch
   useEffect(() => {
     if (step === 'otp') {
-      setTimeout(() => {
-        otpInputRef.current?.focus();
-      }, 150);
+      setTimeout(() => otpInputRef.current?.focus(), 300);
     }
   }, [step]);
-
-  // Sinusoidal shake animation: sin(value * pi * 8) * 10 per spec
-  const triggerError = (message: string) => {
-    setHasError(true);
-    setErrorMsg(message);
-    setLoading(false);
-
-    // Haptic feedback (heavyImpact equivalent)
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try {
-        navigator.vibrate([60, 40, 60]);
-      } catch {}
-    }
-
-    // Sinusoidal damped oscillation
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 45, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 45, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 7.5, duration: 40, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -7.5, duration: 40, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 4, duration: 35, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -4, duration: 35, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
-    ]).start();
-  };
 
   // Deep-link listener: sportplus://auth?code=123456
   useEffect(() => {
@@ -160,48 +160,103 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     return () => sub.remove();
   }, []);
 
-  // Telegram bilan kirish (Primary CTA with deep-link trigger)
-  const handleTelegramLogin = async () => {
-    setLoading(true);
-    setHasError(false);
-    setErrorMsg(null);
+  const triggerError = (msg: string) => {
     try {
-      const sessionId = Math.random().toString(36).substring(2, 10);
-      const deepLink = `tg://resolve?domain=${BOT_USERNAME}&start=auth_${sessionId}`;
-      const webLink = `https://t.me/${BOT_USERNAME}?start=auth_${sessionId}`;
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } catch {}
+    setErrorMessage(msg);
+    setLoading(false);
 
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 40, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6, duration: 35, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -6, duration: 35, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // ─── Telegram botni ochish utility ─────────────────────────
+  const openTelegramBot = async (deepLink: string, webLink: string) => {
+    try {
+      // 1. Avval native tg:// sxemasini sinab ko'ramiz
+      const canOpenNative = await Linking.canOpenURL(deepLink);
+      if (canOpenNative) {
+        await Linking.openURL(deepLink);
+        return;
+      }
+    } catch {}
+
+    // 2. Fallback: brauzerda https://t.me/... ochiladi
+    try {
+      await Linking.openURL(webLink);
+    } catch (e) {
+      console.warn('Telegram ochishda xatolik:', e);
+    }
+  };
+
+  // ─── 1. Telegram Auth Start (API Call + Deep Link) ─────────
+  const handleTelegramAuth = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } catch {}
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      // Backend /auth/telegram-start chaqiriladi
+      const res = await Api.startTelegramAuth();
+
+      const deepLink =
+        res.deep_link ||
+        `tg://resolve?domain=${res.bot_username || 'sport_plus_uz_bot'}&start=auth_${res.session_id}`;
+      const webLink =
+        res.web_link ||
+        `https://t.me/${res.bot_username || 'sport_plus_uz_bot'}?start=auth_${res.session_id}`;
+
+      // Linklarni saqlab qo'yamiz (qayta ochish uchun)
+      setTelegramDeepLink(deepLink);
+      setTelegramWebLink(webLink);
+
+      // OTP sahifaga o'tib, keyin Telegram'ni ochamiz
       setStep('otp');
 
-      try {
-        const canOpen = await Linking.canOpenURL(deepLink);
-        if (canOpen) {
-          await Linking.openURL(deepLink);
-        } else {
-          await Linking.openURL(webLink);
-        }
-      } catch {
-        await Linking.openURL(webLink);
-      }
+      // Kichik kechikish — OTP sahifasi renderlangandan keyin ochilsin
+      setTimeout(() => {
+        openTelegramBot(deepLink, webLink);
+      }, 400);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Telegramga ulanishda xatolik');
+      triggerError(err.message || "Tarmoqqa ulanib bo'lmadi. Server aloqasini tekshiring.");
     } finally {
       setLoading(false);
     }
   };
 
-  // OTP Verification execution
+  // ─── OTP sahifasidan Telegramni qayta ochish ───────────────
+  const handleReopenTelegram = async () => {
+    if (!telegramDeepLink || !telegramWebLink) {
+      // Agar link yo'q bo'lsa, yangidan boshlash
+      await handleTelegramAuth();
+      return;
+    }
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    await openTelegramBot(telegramDeepLink, telegramWebLink);
+  };
+
+  // ─── 2. OTP Verification ────────────────────────────────────
   const executeVerifyOtp = async (code: string) => {
     if (code.length < 6) return;
 
     setLoading(true);
-    setHasError(false);
-    setErrorMsg(null);
+    setErrorMessage(null);
 
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try {
-        navigator.vibrate([25]);
-      } catch {}
-    }
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
 
     try {
       const res = await Api.verifyDirectTelegramOtp(code);
@@ -212,6 +267,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         (res.status === 'EXISTING_USER' || res.status === 'SUCCESS') &&
         res.access_token
       ) {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+
         onLoginSuccess({
           access_token: res.access_token,
           refresh_token: res.refresh_token,
@@ -220,32 +279,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           is_first_login: false,
         });
       } else {
-        triggerError(res.message || 'Kod eskirgan yoki noto‘g‘ri kiritilgan');
+        triggerError(res.message || "Kod eskirgan yoki noto'g'ri kiritilgan");
       }
     } catch (err: any) {
-      triggerError(err.message || 'Kod eskirgan yoki noto‘g‘ri kiritilgan');
+      triggerError(err.message || "Kod eskirgan yoki noto'g'ri kiritilgan");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode.length < 6) {
-      triggerError('6 xonali kodni to‘liq kiriting');
-      return;
-    }
-    executeVerifyOtp(otpCode);
-  };
-
-  // Staff (Owner/Admin) credentials login handler
+  // ─── 3. Staff Credentials Login ─────────────────────────────
   const handleStaffLogin = async () => {
     if (!staffUsername.trim() || !staffPassword.trim()) {
       triggerError("Login va parolni to'liq kiriting");
       return;
     }
     setStaffLoading(true);
-    setHasError(false);
-    setErrorMsg(null);
+    setErrorMessage(null);
+
     try {
       const res = await Api.loginWithCredentials(
         staffUsername.trim().toLowerCase(),
@@ -265,23 +316,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  // Complete Registration for NEW_USER
+  // ─── 4. Registration Completion (NEW USER) ─────────────────
   const handleCompleteRegistration = async () => {
-    if (!regFirstName.trim()) {
-      setErrorMsg('Ismingizni kiriting');
-      return;
-    }
-    if (!regLastName.trim()) {
-      setErrorMsg('Familiyangizni kiriting');
-      return;
-    }
-    if (!regPhone.trim() || regPhone.length < 9) {
-      setErrorMsg('Telefon raqamingizni kiriting');
+    if (!regFirstName.trim() || !regLastName.trim() || regPhone.length < 9) {
+      triggerError("Ma'lumotlarni to'liq kiriting");
       return;
     }
 
     setLoading(true);
-    setErrorMsg(null);
+    setErrorMessage(null);
+
     try {
       const res = await Api.completeRegistration({
         telegram_id: pendingTelegramId || 991827364,
@@ -306,7 +350,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         show_welcome_back: false,
       });
     } catch (err: any) {
-      setErrorMsg(err.message || 'Ro‘yxatdan o‘tishda xatolik yuz berdi');
+      triggerError(err.message || "Ro'yxatdan o'tishda xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -318,213 +362,347 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     } else if (step === 'otp') {
       setStep('login');
       setOtpCode('');
-      setHasError(false);
-      setErrorMsg(null);
+      setErrorMessage(null);
+    } else if (step === 'login') {
+      setStep('welcome');
+      setErrorMessage(null);
     }
   };
 
-  const glowScale = ambientPulse.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.95, 1.08],
-  });
+  // ══════════════════════════════════════════════════════════════
+  //  WELCOME / HERO SCREEN (1-Sahifa)
+  // ══════════════════════════════════════════════════════════════
+  if (step === 'welcome') {
+    const glowOpacity = logoGlow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.65] });
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-    >
-      {/* Ambient background soft pastel blurs behind glass */}
-      <Animated.View
-        style={[
-          styles.ambientGlowContainer,
-          { transform: [{ scale: glowScale }] },
-        ]}
-      >
-        <View style={styles.glowCyan} />
-        <View style={styles.glowEmerald} />
-      </Animated.View>
+    return (
+      <View style={styles.fullScreen}>
+        <StatusBar barStyle="light-content" backgroundColor="#0A0F1E" />
 
-      {/* Top Bar with Minimal Circular Back Button */}
-      <View style={styles.topBar}>
-        {step !== 'login' ? (
+        {/* Dark gradient background */}
+        <SafeGradient
+          colors={['#0A0F1E', '#0D1B2A', '#051C16']}
+          style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+
+        {/* Ambient glow circles */}
+        <View style={styles.glowCircle1} />
+        <View style={styles.glowCircle2} />
+
+        {/* Main content */}
+        <Animated.View
+          style={[
+            styles.welcomeContent,
+            { opacity: welcomeOpacity, transform: [{ scale: welcomeScale }] },
+          ]}
+        >
+          {/* Logo */}
+          <Animated.View style={[styles.welcomeLogoOuter, { opacity: glowOpacity }]}>
+            <View style={styles.welcomeLogoGlowRing} />
+          </Animated.View>
+          <View style={styles.welcomeLogoContainer}>
+            <SafeGradient
+              colors={['#10B981', '#059669', '#047857']}
+              style={styles.welcomeLogoGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.welcomeLogoChar}>S</Text>
+            </SafeGradient>
+          </View>
+
+          {/* Brand title */}
+          <Text style={styles.welcomeBrandTitle}>
+            SPORT<Text style={styles.welcomeBrandAccent}>+</Text>
+          </Text>
+          <Text style={styles.welcomeTagline}>Intelligent Arena Ecosystem</Text>
+
+          {/* Features list */}
+          <View style={styles.welcomeFeatures}>
+            {[
+              { icon: 'flash-outline', text: "Real vaqt slot bron qilish" },
+              { icon: 'people-outline', text: "Solo o'yin radari" },
+              { icon: 'shield-checkmark-outline', text: "Xavfsiz Telegram autentifikatsiya" },
+            ].map((f, i) => (
+              <View key={i} style={styles.welcomeFeatureRow}>
+                <View style={styles.welcomeFeatureIcon}>
+                  <Ionicons name={f.icon as any} size={15} color="#10B981" />
+                </View>
+                <Text style={styles.welcomeFeatureText}>{f.text}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* START BUTTON */}
           <TouchableOpacity
-            style={styles.circularBackBtn}
-            onPress={handleBack}
+            style={styles.startButton}
+            onPress={() => {
+              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
+              setStep('login');
+            }}
+            activeOpacity={0.88}
+          >
+            <SafeGradient
+              colors={['#059669', '#10B981', '#34D399']}
+              style={styles.startButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.startButtonText}>Boshlash</Text>
+              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+            </SafeGradient>
+          </TouchableOpacity>
+
+          {/* Biznes & Admin qisqa yo'l */}
+          <TouchableOpacity
+            style={styles.staffShortcut}
+            onPress={() => {
+              setAuthMode('staff');
+              setStep('login');
+            }}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={20} color="#1E232B" />
+            <Text style={styles.staffShortcutText}>Biznes & Admin kirish</Text>
+            <Ionicons name="chevron-forward" size={13} color="#475569" />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.topBarSpacer} />
-        )}
+        </Animated.View>
 
-        <View style={styles.brandTitleWrap}>
-          <Image
-            source={require('../assets/logo-light.png')}
-            style={{ width: 22, height: 22, marginRight: 6 }}
-            resizeMode="contain"
-          />
-          <Text style={styles.brandTitle}>SPORT+</Text>
+        {/* Footer */}
+        <View style={styles.welcomeFooter}>
+          <Text style={styles.welcomeFooterText}>
+            Toshkent · Jizzax · Sport maydonlari platformasi
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  LOGIN / OTP / REGISTER SCREENS (2+, 3, 4-sahifalar)
+  // ══════════════════════════════════════════════════════════════
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+
+      {/* Background */}
+      <SafeGradient
+        colors={['#0F172A', '#06131E', '#022C22']}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Top Bar with Back Button */}
+        <View style={styles.topBar}>
+          {step !== 'login' ? (
+            <TouchableOpacity
+              style={styles.circularBackBtn}
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={18} color="#F8FAFC" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.circularBackBtn}
+              onPress={handleBack}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="arrow-back" size={18} color="#F8FAFC" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <View style={styles.topBarSpacer} />
-      </View>
+        {/* Logo & Brand — klaviatura ochilganda kichrayadi */}
+        <View style={styles.topSection}>
+          <View style={styles.logoOuter}>
+            <SafeGradient
+              colors={['#10B981', '#059669', '#047857']}
+              style={styles.logoGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.logoChar}>S</Text>
+            </SafeGradient>
+          </View>
+          <Text style={styles.brandTitle}>
+            SPORT<Text style={styles.brandAccent}>+</Text>
+          </Text>
+          <Text style={styles.brandSubtitle}>
+            {step === 'otp'
+              ? 'OTP Tasdiqlash'
+              : step === 'register'
+              ? "Ro'yxatdan o'tish"
+              : 'Tizimga kirish'}
+          </Text>
+        </View>
 
-      {/* Center Frosted Glass Card per Spec */}
-      <View style={styles.cardContainer}>
-        <View style={styles.glassCard}>
-          {step === 'login' ? (
-            /* LOGIN VIEW — Player (Telegram OTP) yoki Staff (username+parol) */
-            <>
-              {/* Mode Tab: O'yinchi / Biznes & Admin */}
-              <View style={styles.tabContainer}>
-                <TouchableOpacity
-                  style={[styles.tabItem, authMode === 'player' && styles.tabItemActive]}
-                  onPress={() => { setAuthMode('player'); setHasError(false); setErrorMsg(null); }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.tabText, authMode === 'player' && styles.tabTextActive]}>
-                    O'yinchi
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.tabItem, authMode === 'staff' && styles.tabItemActive]}
-                  onPress={() => { setAuthMode('staff'); setHasError(false); setErrorMsg(null); }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.tabText, authMode === 'staff' && styles.tabTextActive]}>
-                    Biznes & Admin
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {authMode === 'player' ? (
-                /* PLAYER — Telegram OTP */
-                <>
-                  <Text style={styles.cardHeading}>Hisobga kirish</Text>
-                  <Text style={styles.cardSubheading}>
-                    Parolsiz va tezkor kirish. Telegram botdan 6 xonali kod
-                  </Text>
+        {/* Main Card */}
+        <View style={styles.cardWrapper}>
+          <SafeGradient
+            colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.02)']}
+            style={styles.linearCard}
+          >
+            {/* ── LOGIN STEP ── */}
+            {step === 'login' && (
+              <>
+                {/* O'yinchi / Biznes & Admin tablari */}
+                <View style={styles.modeTabsRow}>
+                  <TouchableOpacity
+                    style={[styles.modeTab, authMode === 'player' && styles.modeTabActive]}
+                    onPress={() => { setAuthMode('player'); setErrorMessage(null); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.modeTabText, authMode === 'player' && styles.modeTabTextActive]}>
+                      O'yinchi
+                    </Text>
+                  </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.primaryDarkCta}
-                    onPress={handleTelegramLogin}
-                    disabled={loading}
-                    activeOpacity={0.88}
+                    style={[styles.modeTab, authMode === 'staff' && styles.modeTabActive]}
+                    onPress={() => { setAuthMode('staff'); setErrorMessage(null); }}
+                    activeOpacity={0.8}
                   >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="paper-plane" size={18} color="#FFFFFF" style={{ marginRight: 10 }} />
-                        <Text style={styles.primaryDarkCtaText}>Telegram bilan kirish</Text>
-                      </>
-                    )}
+                    <Text style={[styles.modeTabText, authMode === 'staff' && styles.modeTabTextActive]}>
+                      Biznes & Admin
+                    </Text>
                   </TouchableOpacity>
-                </>
-              ) : (
-                /* STAFF — Username + Parol */
-                <>
-                  <Text style={styles.cardHeading}>Biznes Kirish</Text>
-                  <Text style={styles.cardSubheading}>
-                    Maydon egalari va adminlar uchun
-                  </Text>
+                </View>
 
-                  {/* Username input */}
-                  <View style={styles.staffInputWrap}>
-                    <Ionicons name="person-outline" size={18} color="#64748B" style={styles.staffInputIcon} />
-                    <TextInput
-                      style={styles.staffInput}
-                      placeholder="Login (username)"
-                      placeholderTextColor="#94A3B8"
-                      value={staffUsername}
-                      onChangeText={setStaffUsername}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      returnKeyType="next"
-                    />
-                  </View>
+                {authMode === 'player' ? (
+                  <>
+                    {/* Maydon holati mini-indikatori */}
+                    <View style={styles.statusRow}>
+                      <Animated.View style={[styles.pulseDot, { opacity: pulseAnim }]} />
+                      <Text style={styles.statusText}>Real vaqt slotlari faol</Text>
+                    </View>
 
-                  {/* Password input */}
-                  <View style={styles.staffInputWrap}>
-                    <Ionicons name="lock-closed-outline" size={18} color="#64748B" style={styles.staffInputIcon} />
-                    <TextInput
-                      style={[styles.staffInput, { flex: 1 }]}
-                      placeholder="Parol"
-                      placeholderTextColor="#94A3B8"
-                      value={staffPassword}
-                      onChangeText={setStaffPassword}
-                      secureTextEntry={!staffPasswordVisible}
-                      returnKeyType="done"
-                      onSubmitEditing={handleStaffLogin}
-                    />
-                    <TouchableOpacity onPress={() => setStaffPasswordVisible(!staffPasswordVisible)}>
-                      <Ionicons
-                        name={staffPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                        size={18}
-                        color="#94A3B8"
+                    {/* Telegram orqali kirish tugmasi */}
+                    <TouchableOpacity
+                      style={styles.ctaButton}
+                      onPress={handleTelegramAuth}
+                      disabled={loading}
+                      activeOpacity={0.88}
+                    >
+                      <SafeGradient
+                        colors={['#059669', '#10B981']}
+                        style={styles.ctaGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <FontAwesome5 name="telegram-plane" size={19} color="#FFFFFF" />
+                            <Text style={styles.ctaText}>Telegram orqali kirish</Text>
+                          </>
+                        )}
+                      </SafeGradient>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  /* STAFF LOGIN */
+                  <View style={{ gap: 12 }}>
+                    <View style={styles.inputWrap}>
+                      <Ionicons name="person-outline" size={18} color="#64748B" style={{ marginRight: 10 }} />
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Username"
+                        placeholderTextColor="#64748B"
+                        value={staffUsername}
+                        onChangeText={setStaffUsername}
+                        autoCapitalize="none"
+                        autoCorrect={false}
                       />
+                    </View>
+
+                    <View style={styles.inputWrap}>
+                      <Ionicons name="lock-closed-outline" size={18} color="#64748B" style={{ marginRight: 10 }} />
+                      <TextInput
+                        style={[styles.textInput, { flex: 1 }]}
+                        placeholder="Parol"
+                        placeholderTextColor="#64748B"
+                        value={staffPassword}
+                        onChangeText={setStaffPassword}
+                        secureTextEntry={!staffPasswordVisible}
+                      />
+                      <TouchableOpacity onPress={() => setStaffPasswordVisible(!staffPasswordVisible)}>
+                        <Ionicons
+                          name={staffPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                          size={18}
+                          color="#64748B"
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.ctaButton}
+                      onPress={handleStaffLogin}
+                      disabled={staffLoading}
+                      activeOpacity={0.88}
+                    >
+                      <SafeGradient
+                        colors={['#059669', '#10B981']}
+                        style={styles.ctaGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                      >
+                        {staffLoading ? (
+                          <ActivityIndicator color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+                            <Text style={styles.ctaText}>Tizimga kirish</Text>
+                          </>
+                        )}
+                      </SafeGradient>
                     </TouchableOpacity>
                   </View>
+                )}
+              </>
+            )}
 
-                  <TouchableOpacity
-                    style={[styles.staffLoginBtn, staffLoading && { opacity: 0.6 }]}
-                    onPress={handleStaffLogin}
-                    disabled={staffLoading}
-                    activeOpacity={0.88}
-                  >
-                    {staffLoading ? (
-                      <ActivityIndicator color="#FFF" />
-                    ) : (
-                      <>
-                        <Ionicons name="log-in-outline" size={18} color="#FFF" style={{ marginRight: 8 }} />
-                        <Text style={styles.staffLoginBtnText}>Tizimga kirish</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+            {/* ── OTP STEP ── */}
+            {step === 'otp' && (
+              <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
+                <Text style={styles.otpHeader}>Tasdiqlash kodi</Text>
+                <Text style={styles.otpSubheader}>
+                  Telegram botdan kelgan 6 xonali kodni kiriting
+                </Text>
 
-                  <Text style={styles.staffHint}>
-                    Agar sizda login/parol yo'q bo'lsa — avval Telegram orqali kiring va profilingizda kirish kaliti yarating.
-                  </Text>
-                </>
-              )}
-            </>
-          ) : step === 'otp' ? (
-            /* 2. KINETIC OTP VERIFICATION VIEW */
-            <>
-              {/* Header: Crisp title and muted subtitle */}
-              <Text style={styles.cardHeading}>Tasdiqlash kodi</Text>
-              <Text style={styles.cardSubheading}>
-                Telegram botdan kelgan 6 xonali kod
-              </Text>
+                {/* Telegram qayta ochish tugmasi — neon outlined */}
+                <TouchableOpacity
+                  style={styles.reopenTelegramBtn}
+                  onPress={handleReopenTelegram}
+                  activeOpacity={0.8}
+                >
+                  <FontAwesome5 name="telegram-plane" size={16} color="#10B981" />
+                  <Text style={styles.reopenTelegramText}>Telegramni qayta ochish</Text>
+                  <Ionicons name="open-outline" size={14} color="#10B981" />
+                </TouchableOpacity>
 
-              {/* 6-Cell Pinput Box with Sinusoidal Shake Container */}
-              <Animated.View
-                style={[
-                  styles.otpInputWrapper,
-                  { transform: [{ translateX: shakeAnim }] },
-                ]}
-              >
+                {/* Hidden native input */}
                 <TextInput
                   ref={otpInputRef}
-                  style={styles.hiddenMasterInput}
+                  style={styles.hiddenInput}
                   value={otpCode}
                   onChangeText={(val) => {
                     const cleaned = val.replace(/[^0-9]/g, '').slice(0, 6);
                     setOtpCode(cleaned);
-
-                    if (hasError) {
-                      setHasError(false);
-                      setErrorMsg(null);
-                    }
-
-                    if (cleaned.length > 0 && typeof navigator !== 'undefined' && navigator.vibrate) {
-                      try {
-                        navigator.vibrate([15]);
-                      } catch {}
-                    }
-
+                    setErrorMessage(null);
                     if (cleaned.length === 6) {
                       executeVerifyOtp(cleaned);
                     }
@@ -534,544 +712,580 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   autoFocus={true}
                   onFocus={() => setIsInputFocused(true)}
                   onBlur={() => setIsInputFocused(false)}
-                  caretHidden={true}
                 />
 
-                {/* 6 Visual Cells */}
+                {/* 6 Visual OTP Cells */}
                 <TouchableOpacity
-                  style={styles.otpBoxesRow}
+                  style={styles.otpCellsRow}
                   activeOpacity={1}
                   onPress={() => otpInputRef.current?.focus()}
                 >
                   {Array.from({ length: 6 }).map((_, index) => {
                     const char = otpCode[index] || '';
-                    const isCurrentActive =
-                      isInputFocused && index === otpCode.length && !hasError;
+                    const isActive = isInputFocused && index === otpCode.length;
                     const isFilled = index < otpCode.length;
 
                     return (
                       <View
                         key={index}
                         style={[
-                          styles.otpBox,
-                          isFilled ? styles.otpBoxFilled : null,
-                          isCurrentActive ? styles.otpBoxFocused : null,
-                          hasError ? styles.otpBoxError : null,
+                          styles.otpCell,
+                          isFilled && styles.otpCellFilled,
+                          isActive && styles.otpCellActive,
+                          errorMessage && styles.otpCellError,
                         ]}
                       >
                         {char ? (
-                          <Text
-                            style={[
-                              styles.otpDigitText,
-                              hasError && styles.otpDigitTextError,
-                            ]}
-                          >
-                            {char}
-                          </Text>
-                        ) : isCurrentActive ? (
-                          <Animated.View
-                            style={[
-                              styles.cursorBar,
-                              { opacity: cursorOpacity },
-                            ]}
-                          />
+                          <Text style={styles.otpCellText}>{char}</Text>
+                        ) : isActive ? (
+                          <Animated.View style={[styles.cursor, { opacity: cursorOpacity }]} />
                         ) : null}
                       </View>
                     );
                   })}
                 </TouchableOpacity>
+
+                {/* Tasdiqlash tugmasi */}
+                <TouchableOpacity
+                  style={[styles.ctaButton, { marginTop: 20 }]}
+                  onPress={() => executeVerifyOtp(otpCode)}
+                  disabled={loading || otpCode.length < 6}
+                  activeOpacity={0.88}
+                >
+                  <SafeGradient
+                    colors={otpCode.length === 6 ? ['#059669', '#10B981'] : ['#334155', '#1E293B']}
+                    style={styles.ctaGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.ctaText}>Tasdiqlash</Text>
+                    )}
+                  </SafeGradient>
+                </TouchableOpacity>
               </Animated.View>
+            )}
 
-              {/* Error Message Pill */}
-              {hasError && errorMsg ? (
-                <View style={styles.errorPill}>
-                  <Ionicons name="alert-circle" size={15} color="#EF4444" />
-                  <Text style={styles.errorPillText}>{errorMsg}</Text>
+            {/* ── REGISTER STEP ── */}
+            {step === 'register' && (
+              <View style={{ gap: 12 }}>
+                <Text style={styles.otpHeader}>Profil ma'lumotlari</Text>
+                <Text style={styles.otpSubheader}>Ism, familiya va telefon raqamingiz</Text>
+
+                <View style={styles.inputWrap}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Ismingiz"
+                    placeholderTextColor="#64748B"
+                    value={regFirstName}
+                    onChangeText={setRegFirstName}
+                  />
                 </View>
-              ) : null}
 
-              {/* Single compact helper: Telegram botga o'tish */}
-              <TouchableOpacity
-                style={styles.helperBtn}
-                onPress={() =>
-                  Linking.openURL(`https://t.me/${BOT_USERNAME}?start=auth`)
-                }
-                activeOpacity={0.7}
-              >
-                <Text style={styles.helperBtnText}>Telegram botga o‘tish</Text>
-                <Ionicons name="arrow-forward" size={14} color="#0284C7" />
-              </TouchableOpacity>
+                <View style={styles.inputWrap}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Familiyangiz"
+                    placeholderTextColor="#64748B"
+                    value={regLastName}
+                    onChangeText={setRegLastName}
+                  />
+                </View>
 
-              {/* Single bottom CTA: Kirishni Tasdiqlash */}
-              <TouchableOpacity
-                style={styles.primaryDarkCta}
-                onPress={handleVerifyOtp}
-                disabled={loading}
-                activeOpacity={0.88}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Text style={styles.primaryDarkCtaText}>
-                      Kirishni Tasdiqlash
-                    </Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={18}
-                      color="#FFFFFF"
-                      style={{ marginLeft: 8 }}
-                    />
-                  </>
-                )}
-              </TouchableOpacity>
-            </>
-          ) : (
-            /* 3. REGISTRATION VIEW (NEW_USER) */
-            <>
-              <Text style={styles.cardHeading}>Profilingiz</Text>
-              <Text style={styles.cardSubheading}>
-                Ism, familiya va telefon raqamingizni kiriting
-              </Text>
+                <View style={styles.inputWrap}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="+998"
+                    placeholderTextColor="#64748B"
+                    keyboardType="phone-pad"
+                    value={regPhone}
+                    onChangeText={setRegPhone}
+                  />
+                </View>
 
-              <View style={styles.regFieldsWrapper}>
-                <TextInput
-                  style={styles.regInputField}
-                  placeholder="Ismingiz"
-                  placeholderTextColor="#94A3B8"
-                  value={regFirstName}
-                  onChangeText={setRegFirstName}
-                />
-                <TextInput
-                  style={styles.regInputField}
-                  placeholder="Familiyangiz"
-                  placeholderTextColor="#94A3B8"
-                  value={regLastName}
-                  onChangeText={setRegLastName}
-                />
-                <TextInput
-                  style={styles.regInputField}
-                  placeholder="Telefon raqamingiz (+998)"
-                  placeholderTextColor="#94A3B8"
-                  keyboardType="phone-pad"
-                  value={regPhone}
-                  onChangeText={setRegPhone}
-                />
+                <TouchableOpacity
+                  style={styles.ctaButton}
+                  onPress={handleCompleteRegistration}
+                  disabled={loading}
+                  activeOpacity={0.88}
+                >
+                  <SafeGradient
+                    colors={['#059669', '#10B981']}
+                    style={styles.ctaGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.ctaText}>Yakunlash</Text>
+                    )}
+                  </SafeGradient>
+                </TouchableOpacity>
               </View>
+            )}
 
-              {errorMsg && (
-                <View style={styles.errorPill}>
-                  <Ionicons name="alert-circle" size={15} color="#EF4444" />
-                  <Text style={styles.errorPillText}>{errorMsg}</Text>
-                </View>
-              )}
-
-              {/* Bottom CTA: Davom etish */}
-              <TouchableOpacity
-                style={styles.primaryDarkCta}
-                onPress={handleCompleteRegistration}
-                disabled={loading}
-                activeOpacity={0.88}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Text style={styles.primaryDarkCtaText}>Davom etish</Text>
-                    <Ionicons
-                      name="arrow-forward"
-                      size={18}
-                      color="#FFFFFF"
-                      style={{ marginLeft: 8 }}
-                    />
-                  </>
-                )}
-              </TouchableOpacity>
-            </>
-          )}
+            {/* Error box */}
+            {errorMessage && (
+              <View style={styles.errorBox}>
+                <Feather name="alert-octagon" size={15} color="#F87171" />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            )}
+          </SafeGradient>
         </View>
-      </View>
+
+        {/* Footer */}
+        <View style={styles.footerSection}>
+          <Text style={styles.footerText}>Xavfsiz Telegram OTP avtorizatsiyasi</Text>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  // ── Welcome Screen ──────────────────────────────────────────
+  fullScreen: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
-    position: 'relative',
-    overflow: 'hidden',
+    backgroundColor: '#0A0F1E',
   },
-
-  /* Soft Ambient Pastel Glows behind glass */
-  ambientGlowContainer: {
+  glowCircle1: {
     position: 'absolute',
-    top: '12%',
-    left: '8%',
-    right: '8%',
-    height: 380,
+    top: -80,
+    left: -80,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(5, 150, 105, 0.12)',
+  },
+  glowCircle2: {
+    position: 'absolute',
+    bottom: -100,
+    right: -60,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+  },
+  welcomeContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    pointerEvents: 'none',
+    paddingHorizontal: 32,
+    paddingTop: 60,
   },
-  glowCyan: {
+  welcomeLogoOuter: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(56, 189, 248, 0.14)',
-    shadowColor: '#38BDF8',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 100,
-    elevation: 0,
+    top: '20%',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    alignSelf: 'center',
   },
-  glowEmerald: {
+  welcomeLogoGlowRing: {
     position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    top: 60,
-    left: 40,
-    backgroundColor: 'rgba(0, 255, 135, 0.10)',
-    shadowColor: '#00FF87',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 100,
-    elevation: 0,
-  },
-
-  /* Top Bar */
-  topBar: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
-    paddingHorizontal: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 20,
-  },
-  circularBackBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    inset: -10,
+    borderRadius: 80,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
   },
-  topBarSpacer: {
-    width: 40,
-    height: 40,
-  },
-  brandTitleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1E232B',
-    letterSpacing: 2,
-  },
-
-  /* Card Layout */
-  cardContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    zIndex: 10,
-  },
-  /* Frosted Glass Card per Spec */
-  glassCard: {
-    width: Math.min(380, width - 36),
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+  welcomeLogoContainer: {
+    width: 100,
+    height: 100,
     borderRadius: 32,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.65)',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    shadowColor: 'rgba(15, 23, 42, 0.08)',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 1,
-    shadowRadius: 36,
+    padding: 2,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    marginBottom: 24,
+    shadowColor: '#10B981',
+    shadowOpacity: 0.5,
+    shadowRadius: 30,
     elevation: 12,
   },
-
-  /* Header Tab: Log in / Sign up */
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(15, 23, 42, 0.06)',
-    borderRadius: 24,
-    padding: 4,
-    marginBottom: 24,
-    width: '100%',
-  },
-  tabItem: {
+  welcomeLogoGradient: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabItemActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: 'rgba(0, 0, 0, 0.06)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
+  welcomeLogoChar: {
+    fontSize: 54,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -2,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  tabTextActive: {
-    color: '#1E232B',
-    fontWeight: '700',
-  },
-
-  /* Typography */
-  cardHeading: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1E232B',
-    textAlign: 'center',
+  welcomeBrandTitle: {
+    fontSize: 42,
+    fontWeight: '900',
+    letterSpacing: 2,
+    color: '#F8FAFC',
     marginBottom: 6,
-    letterSpacing: -0.3,
   },
-  cardSubheading: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 24,
-    maxWidth: 260,
+  welcomeBrandAccent: {
+    color: '#10B981',
   },
-
-  /* Primary Dark Slate CTA per Spec: #1E232B, pill 28px */
-  primaryDarkCta: {
+  welcomeTagline: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    color: '#475569',
+    marginBottom: 40,
+  },
+  welcomeFeatures: {
     width: '100%',
-    height: 56,
-    backgroundColor: '#1E232B',
-    borderRadius: 28,
+    gap: 12,
+    marginBottom: 48,
+  },
+  welcomeFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  welcomeFeatureIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeFeatureText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  startButton: {
+    width: '100%',
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#059669',
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 10,
+    marginBottom: 16,
+  },
+  startButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1E232B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 20,
-    elevation: 8,
-    marginTop: 4,
+    paddingVertical: 18,
+    gap: 10,
   },
-  primaryDarkCtaText: {
+  startButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-
-  /* Ghost Dev Button */
-  ghostDevBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+  staffShortcut: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
+    gap: 4,
+    paddingVertical: 8,
   },
-  ghostDevBtnText: {
-    color: '#94A3B8',
+  staffShortcutText: {
+    color: '#475569',
     fontSize: 13,
     fontWeight: '500',
   },
+  welcomeFooter: {
+    alignItems: 'center',
+    paddingBottom: 32,
+  },
+  welcomeFooterText: {
+    color: '#334155',
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
 
-  /* OTP Controller */
-  otpInputWrapper: {
+  // ── Login / OTP / Register Screens ──────────────────────────
+  container: {
+    flex: 1,
+    backgroundColor: '#0F172A',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+  },
+  topBar: {
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    marginVertical: 10,
-  },
-  hiddenMasterInput: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.01,
-    zIndex: 10,
-    color: 'transparent',
-  },
-  otpBoxesRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'flex-start',
+    height: 52,
+    paddingTop: Platform.OS === 'ios' ? 8 : 12,
   },
-  otpBox: {
-    width: 46,
-    height: 58,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.65)',
+  circularBackBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(0, 0, 0, 0.03)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 1,
   },
-  otpBoxFilled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderColor: 'rgba(0, 255, 135, 0.4)',
-    borderWidth: 1.5,
+  topSection: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 24,
   },
-  otpBoxFocused: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#00FF87',
-    borderWidth: 2,
-    shadowColor: '#00FF87',
-    shadowOffset: { width: 0, height: 0 },
+  logoOuter: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    padding: 2,
+    backgroundColor: 'rgba(16, 185, 129, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    marginBottom: 14,
+    shadowColor: '#10B981',
     shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 4,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  otpBoxError: {
-    backgroundColor: 'rgba(239, 68, 68, 0.06)',
-    borderColor: '#EF4444',
-    borderWidth: 2,
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
+  logoGradient: {
+    flex: 1,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoChar: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+  },
+  brandTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    color: '#F8FAFC',
+  },
+  brandAccent: {
+    color: '#10B981',
+  },
+  brandSubtitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    color: '#475569',
+    marginTop: 4,
+  },
+  cardWrapper: {
+    width: Math.min(400, width - 40),
+  },
+  linearCard: {
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
     elevation: 6,
   },
-  otpDigitText: {
-    color: '#1E232B',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  otpDigitTextError: {
-    color: '#EF4444',
-  },
-  cursorBar: {
-    width: 2,
-    height: 24,
-    backgroundColor: '#00FF87',
-    borderRadius: 1,
-  },
-
-  /* Compact Helper Button */
-  helperBtn: {
+  modeTabsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: 'rgba(2, 132, 199, 0.08)',
-    marginTop: 12,
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  helperBtnText: {
-    color: '#0284C7',
+  modeTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 11,
+  },
+  modeTabActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+  },
+  modeTabText: {
+    color: '#64748B',
     fontSize: 13,
     fontWeight: '600',
   },
-
-  /* Error Pill */
-  errorPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    marginVertical: 10,
+  modeTabTextActive: {
+    color: '#10B981',
+    fontWeight: '700',
   },
-  errorPillText: {
-    color: '#EF4444',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  /* Registration Fields */
-  regFieldsWrapper: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 18,
-  },
-  regInputField: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.85)',
-    paddingHorizontal: 16,
-    color: '#1E232B',
-    fontSize: 14,
-    shadowColor: 'rgba(0, 0, 0, 0.02)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  // ── Staff (Owner/Admin) kirish formi ──────────────────────
-  staffInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-  },
-  staffInputIcon: {
-    marginRight: 10,
-  },
-  staffInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#1E232B',
-  },
-  staffLoginBtn: {
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#059669',
-    paddingVertical: 15,
-    borderRadius: 16,
-    marginTop: 4,
-    gap: 6,
+    gap: 8,
+    marginBottom: 20,
   },
-  staffLoginBtnText: {
-    color: '#FFF',
+  pulseDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#10B981',
+  },
+  statusText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  ctaButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  ctaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 12,
+  },
+  ctaText: {
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  staffHint: {
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  textInput: {
+    flex: 1,
+    color: '#F8FAFC',
+    fontSize: 14,
+  },
+
+  // ── OTP specific ─────────────────────────────────────────────
+  otpHeader: {
+    color: '#F8FAFC',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
-    color: '#94A3B8',
-    fontSize: 11,
-    marginTop: 14,
-    lineHeight: 16,
+    marginBottom: 4,
+  },
+  otpSubheader: {
+    color: '#64748B',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  // Telegram qayta ochish — neon outlined button
+  reopenTelegramBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(16, 185, 129, 0.45)',
+    backgroundColor: 'rgba(16, 185, 129, 0.06)',
+    marginBottom: 20,
+  },
+  reopenTelegramText: {
+    color: '#10B981',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  hiddenInput: {
+    position: 'absolute',
+    opacity: 0.01,
+    width: 1,
+    height: 1,
+  },
+  otpCellsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  otpCell: {
+    flex: 1,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otpCellFilled: {
+    borderColor: '#10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.10)',
+  },
+  otpCellActive: {
+    borderColor: '#10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.14)',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  otpCellError: {
+    borderColor: '#EF4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.10)',
+  },
+  otpCellText: {
+    color: '#F8FAFC',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  cursor: {
+    width: 2,
+    height: 22,
+    backgroundColor: '#10B981',
+    borderRadius: 1,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  errorText: {
+    color: '#F87171',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    flexShrink: 1,
+  },
+  footerSection: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  footerText: {
+    color: '#334155',
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
 });

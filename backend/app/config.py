@@ -105,6 +105,13 @@ class Settings(BaseSettings):
     # ─── Firebase (Push Notifications) ───────────
     FIREBASE_CREDENTIALS_PATH: str = ""
 
+    # ─── Apple APNs (Live Activities & Dynamic Island) ──
+    APNS_KEY_ID: str = ""
+    APNS_TEAM_ID: str = ""
+    APNS_BUNDLE_ID: str = "uz.sportplus.app"
+    APNS_AUTH_KEY_PATH: str = ""  # Path to AuthKey_XXXXXXXXXX.p8
+    APNS_USE_SANDBOX: bool = True
+
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from JSON string to list."""

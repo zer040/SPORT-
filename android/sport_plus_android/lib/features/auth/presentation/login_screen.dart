@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/glass_container.dart';
 import '../../navigation/main_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,9 +13,10 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
   final ApiService _api = ApiService();
   final TextEditingController _otpController = TextEditingController();
+  final FocusNode _otpFocus = FocusNode();
 
   bool _isLoading = false;
   bool _isWaitingForOtp = false;
@@ -23,282 +24,568 @@ class _LoginScreenState extends State<LoginScreen> {
   String _authToken = '';
   String _deepLink = '';
 
+  late AnimationController _shakeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    _otpFocus.dispose();
+    _shakeController.dispose();
+    super.dispose();
+  }
+
   Future<void> _startTelegramAuth() async {
+    HapticFeedback.heavyImpact();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final res = await _api.dio.post('/auth/telegram/init');
-      final data = res.data;
+      dynamic data;
+      try {
+        final res = await _api.dio.post('/auth/telegram/init');
+        data = res.data;
+        _authToken = data['auth_token'] ?? '';
+        _deepLink = data['deep_link'] ?? '';
+      } catch (_) {
+        final res2 = await _api.dio.post('/auth/telegram-start');
+        data = res2.data;
+        _authToken = data['session_id'] ?? '';
+        _deepLink = data['deep_link'] ?? '';
+      }
 
       setState(() {
-        _authToken = data['auth_token'];
-        _deepLink = data['deep_link'] ?? '';
         _isWaitingForOtp = true;
         _isLoading = false;
       });
-      HapticFeedback.lightImpact();
+
+      // Telegram botini avtomatik ochish
+      await _openTelegram();
+
+      // OTP inputga focus
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _otpFocus.requestFocus();
+      });
     } catch (e) {
+      HapticFeedback.heavyImpact();
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Telegram avtorizatsiyani boshlashda xatolik yuz berdi';
+        _errorMessage = 'Ulanishda xatolik. Qayta urining.';
       });
-      HapticFeedback.heavyImpact();
+      _shakeController.forward(from: 0);
     }
+  }
+
+  Future<void> _openTelegram() async {
+    if (_deepLink.isEmpty && _authToken.isEmpty) return;
+    try {
+      if (_deepLink.isNotEmpty) {
+        final tgUri = Uri.parse(_deepLink);
+        if (await canLaunchUrl(tgUri)) {
+          await launchUrl(tgUri, mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: Web havola orqali ochish
+    try {
+      final fallbackUrl = 'https://t.me/sport_plus_uz_bot?start=auth_$_authToken';
+      final webUri = Uri.parse(fallbackUrl);
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   Future<void> _verifyOtp() async {
     if (_otpController.text.length != 6) {
-      setState(() => _errorMessage = "6 xonali kodni to'liq kiriting");
       HapticFeedback.mediumImpact();
+      setState(() => _errorMessage = '6 xonali kodni kiriting');
+      _shakeController.forward(from: 0);
       return;
     }
 
+    HapticFeedback.lightImpact();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    try {
-      final res = await _api.dio.post('/auth/telegram/verify-otp', data: {
-        'auth_token': _authToken,
-        'code': _otpController.text.trim(),
-      });
+    final enteredCode = _otpController.text.trim();
 
-      final accessToken = res.data['access_token'];
+    try {
+      dynamic resData;
+
+      // 1-urinish: /auth/telegram/verify-otp (TelegramAuthService)
+      try {
+        final res = await _api.dio.post('/auth/telegram/verify-otp', data: {
+          'auth_token': _authToken,
+          'code': enteredCode,
+        });
+        resData = res.data;
+      } catch (_) {
+        // 2-urinish: /auth/verify-telegram-otp (Direct bot OTP fallback)
+        final res2 = await _api.dio.post('/auth/verify-telegram-otp', data: {
+          'code': enteredCode,
+        });
+        resData = res2.data;
+      }
+
+      final accessToken = resData?['access_token'];
       if (accessToken != null) {
         await _api.saveToken(accessToken);
         HapticFeedback.mediumImpact();
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => const MainNavigationScreen(),
+              transitionsBuilder: (_, anim, __, child) => FadeTransition(
+                opacity: anim,
+                child: child,
+              ),
+              transitionDuration: const Duration(milliseconds: 400),
+            ),
           );
         }
       } else {
         throw Exception('Token topilmadi');
       }
     } catch (e) {
+      HapticFeedback.heavyImpact();
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Kod noto‘g‘ri yoki muddati tugagan';
+        _errorMessage = 'Kod noto\'g\'ri yoki muddati tugagan';
       });
-      HapticFeedback.heavyImpact();
+      _otpController.clear();
+      _shakeController.forward(from: 0);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Logo & Hero
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      'assets/images/logo_light.png',
-                      width: 52,
-                      height: 52,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.sports_soccer,
-                        size: 44,
-                        color: AppTheme.primary,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    SizedBox(height: isKeyboardOpen ? 16 : 48),
+
+                    // ─── Logo & Brand ───────────────────────────
+                    _buildBrand(isKeyboardOpen),
+
+                    SizedBox(height: isKeyboardOpen ? 20 : 40),
+
+                    // ─── Action Card ────────────────────────────
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, anim) => SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.05, 0),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
+                        child: FadeTransition(opacity: anim, child: child),
                       ),
+                      child: _isWaitingForOtp
+                          ? _buildOtpCard()
+                          : _buildInitCard(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── Footer ─────────────────────────────────────────
+            if (!isKeyboardOpen)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'Foydalanish shartlari',
+                    style: TextStyle(
+                      color: AppTheme.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'SPORT+',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Futbol maydonlarini qulay bron qilish',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 36),
-
-                // Glassmorphism Card
-                GlassContainer(
-                  borderRadius: 28.0,
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      if (!_isWaitingForOtp) ...[
-                        const Text(
-                          'Tezkor kirish',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'SMS kutmasdan, rasmiy Telegram botimiz orqali 6 xonali kod oling.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        GlassPillButton(
-                          title: 'Telegram orqali kod olish',
-                          icon: Icons.send_rounded,
-                          isLoading: _isLoading,
-                          onTap: _startTelegramAuth,
-                        ),
-                      ] else ...[
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                              onPressed: () {
-                                setState(() {
-                                  _isWaitingForOtp = false;
-                                  _otpController.clear();
-                                });
-                              },
-                            ),
-                            const Expanded(
-                              child: Text(
-                                'Kodni kiriting',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 40),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Telegram botimizga yuborilgan 6 xonali kod:',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // OTP TextField
-                        TextField(
-                          controller: _otpController,
-                          keyboardType: TextInputType.number,
-                          maxLength: 6,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 10,
-                            color: AppTheme.textPrimary,
-                          ),
-                          decoration: InputDecoration(
-                            counterText: '',
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: AppTheme.primary.withOpacity(0.3),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: const BorderSide(
-                                color: AppTheme.primary,
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          onChanged: (val) {
-                            HapticFeedback.selectionClick();
-                            if (val.length == 6) {
-                              _verifyOtp();
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-
-                        if (_deepLink.isNotEmpty)
-                          TextButton.icon(
-                            icon: const Icon(Icons.open_in_new, size: 16),
-                            label: const Text('Telegram Botni ochish'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppTheme.primary,
-                            ),
-                            onPressed: () async {
-                              final uri = Uri.parse(_deepLink);
-                              if (await canLaunchUrl(uri)) {
-                                await launchUrl(uri);
-                              }
-                            },
-                          ),
-
-                        const SizedBox(height: 16),
-                        GlassPillButton(
-                          title: 'Tasdiqlash',
-                          icon: Icons.check_circle_outline,
-                          isLoading: _isLoading,
-                          onTap: _verifyOtp,
-                        ),
-                      ],
-
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 14),
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppTheme.danger,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'SPORT+ • Flutter Material 3 Glassmorphism',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildBrand(bool isKeyboardOpen) {
+    return Column(
+      children: [
+        // Logo badge
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: isKeyboardOpen ? 60 : 88,
+          height: isKeyboardOpen ? 60 : 88,
+          decoration: BoxDecoration(
+            color: const Color(0xFFECFDF5),
+            borderRadius: BorderRadius.circular(isKeyboardOpen ? 18 : 28),
+            border: Border.all(
+              color: const Color(0xFFA7F3D0),
+              width: 1.5,
+            ),
+          ),
+          child: Center(
+            child: Image.asset(
+              'assets/images/logo_light.png',
+              width: isKeyboardOpen ? 36 : 52,
+              height: isKeyboardOpen ? 36 : 52,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Text(
+                'S+',
+                style: TextStyle(
+                  fontSize: isKeyboardOpen ? 22 : 32,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.primary,
+                  letterSpacing: -1,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        Text(
+          'SPORT+',
+          style: TextStyle(
+            fontSize: isKeyboardOpen ? 22 : 28,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInitCard() {
+    return _buildCard(
+      key: const ValueKey('init'),
+      child: Column(
+        children: [
+          _buildTelegramButton(),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            _buildErrorBadge(_errorMessage!),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtpCard() {
+    return _buildCard(
+      key: const ValueKey('otp'),
+      child: Column(
+        children: [
+          // Header row
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    _isWaitingForOtp = false;
+                    _otpController.clear();
+                    _errorMessage = null;
+                  });
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 16,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ),
+              const Expanded(
+                child: Text(
+                  'Kodni kiriting',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 36),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // OTP Input
+          TextField(
+            controller: _otpController,
+            focusNode: _otpFocus,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 12,
+              color: AppTheme.textPrimary,
+            ),
+            decoration: InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: AppTheme.surfaceSecondary,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(
+                  color: AppTheme.primary,
+                  width: 1.5,
+                ),
+              ),
+              hintText: '_ _ _ _ _ _',
+              hintStyle: const TextStyle(
+                color: AppTheme.textMuted,
+                fontSize: 22,
+                letterSpacing: 8,
+              ),
+            ),
+            onChanged: (val) {
+              HapticFeedback.selectionClick();
+              if (val.length == 6) _verifyOtp();
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Telegram bot link
+          if (_deepLink.isNotEmpty || _authToken.isNotEmpty)
+            GestureDetector(
+              onTap: _openTelegram,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.send_rounded, size: 14, color: Color(0xFF3B82F6)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Telegram botni ochish',
+                      style: TextStyle(
+                        color: Color(0xFF3B82F6),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Verify button
+          _buildActionButton(
+            label: 'Tasdiqlash',
+            icon: Icons.check_rounded,
+            onTap: _verifyOtp,
+          ),
+
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            _buildErrorBadge(_errorMessage!),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard({required Widget child, required ValueKey key}) {
+    return Container(
+      key: key,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildTelegramButton() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _startTelegramAuth,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 54,
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withOpacity(0.28),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: _isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.send_rounded, size: 20, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text(
+                      'Telegram orqali kirish',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: _isLoading ? null : onTap,
+      child: Container(
+        height: 54,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withOpacity(0.28),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: _isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorBadge(String message) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline_rounded, size: 15, color: Color(0xFFEF4444)),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    ).animate().shakeX(amount: 6, duration: 400.ms);
   }
 }

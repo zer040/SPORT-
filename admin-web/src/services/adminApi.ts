@@ -3,7 +3,11 @@
  * Barcha so'rovlar xatosiz va to'liq himoyalangan formatda qaytariladi.
  */
 
-const API_BASE = 'http://localhost:8000/api/v1/admin';
+const API_BASE = import.meta.env.VITE_API_URL || 
+  (localStorage.getItem('sportplus_use_local_backend') === 'true' 
+    ? 'http://localhost:8000/api/v1/admin' 
+    : 'https://sport-jmu3.onrender.com/api/v1/admin');
+
 
 // Admin demo/session token (ADMIN roli bilan)
 let adminToken = localStorage.getItem('sportplus_admin_token') || 'admin-sportplus-super-token';

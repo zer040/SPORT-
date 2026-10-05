@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct MatchPassView: View {
     @StateObject private var viewModel = BookingsViewModel()
+    @ObservedObject private var liveActivityManager = LiveActivityManager.shared
     
     public init() {}
     
@@ -140,6 +141,43 @@ public struct MatchPassView: View {
                 Text("KOD: SP-9842-PASS")
                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                     .foregroundColor(SportPlusTheme.textSecondary)
+                
+                // MARK: - Dynamic Island Live Activity Action Bar
+                Button {
+                    HapticManager.shared.impact(.medium)
+                    Task {
+                        if liveActivityManager.isActivityActive {
+                            await liveActivityManager.endActivity(bookingId: "SP-9842-PASS")
+                        } else {
+                            let kickoff = Date().addingTimeInterval(30 * 60)
+                            await liveActivityManager.startMatchCountdown(
+                                bookingId: "SP-9842-PASS",
+                                venueName: "Bunyodkor Arena",
+                                pitchName: "Maydon №2",
+                                kickoffTime: kickoff,
+                                endTime: kickoff.addingTimeInterval(90 * 60)
+                            )
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: liveActivityManager.isActivityActive ? "stop.circle.fill" : "wave.3.forward.circle.fill")
+                            .font(.system(size: 16))
+                        
+                        Text(liveActivityManager.isActivityActive ? "Dynamic Island Faol (To'xtatish)" : "Dynamic Island Taymerini Yoqish")
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundColor(liveActivityManager.isActivityActive ? Color(hex: "EF4444") : SportPlusTheme.primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        (liveActivityManager.isActivityActive ? Color(hex: "EF4444") : SportPlusTheme.primary)
+                            .opacity(0.1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .padding(.top, 4)
             }
             .padding(20)
             .frame(maxWidth: .infinity)

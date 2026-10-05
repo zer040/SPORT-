@@ -64,6 +64,10 @@ api_router.include_router(click_router, prefix="/payments/click", tags=["Payment
 api_router.include_router(payme_router, prefix="/payments/payme", tags=["Payments - Payme"])
 api_router.include_router(checkout_router, prefix="/payments", tags=["Payments - Checkout"])
 
+# ─── iOS Live Activities & Dynamic Island ─────
+from app.api.live_activity import router as live_activity_router
+api_router.include_router(live_activity_router, prefix="/live-activities", tags=["Live Activities & Dynamic Island"])
+
 # ─── Telegram Bot Webhook ────────────────────
 from typing import Dict, Any
 from app.services.telegram_bot import process_telegram_update

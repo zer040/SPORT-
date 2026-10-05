@@ -132,17 +132,57 @@ class TelegramAuthService:
         otp_key = f"tg_otp:{auth_token}"
         stored_data = await self.redis.get(otp_key)
 
-        if not stored_data:
-            raise OTPExpiredError("Tasdiqlash kodi eskirgan yoki topilmadi. Qaytadan urinib ko'ring.")
+        data = None
+        if stored_data:
+            data = json.loads(stored_data.decode("utf-8") if isinstance(stored_data, bytes) else stored_data)
+        else:
+            # 1. Agar tg_otp:auth_<token> shaklida saqlangan bo'lsa
+            if not auth_token.startswith("auth_"):
+                alt_stored = await self.redis.get(f"tg_otp:auth_{auth_token}")
+                if alt_stored:
+                    data = json.loads(alt_stored.decode("utf-8") if isinstance(alt_stored, bytes) else alt_stored)
 
-        data = json.loads(stored_data.decode("utf-8") if isinstance(stored_data, bytes) else stored_data)
+            # 2. session:<auth_token> orqali tekshirish
+            if not data:
+                session_code = await self.redis.get(f"session:{auth_token}")
+                if not session_code and not auth_token.startswith("auth_"):
+                    session_code = await self.redis.get(f"session:auth_{auth_token}")
+                if session_code:
+                    s_code = session_code.decode("utf-8") if isinstance(session_code, bytes) else session_code
+                    if s_code == code.strip():
+                        tg_id = await self.redis.get(f"otp:{s_code}")
+                        if tg_id:
+                            telegram_id_val = int(tg_id.decode("utf-8") if isinstance(tg_id, bytes) else tg_id)
+                            data = {
+                                "code": s_code,
+                                "telegram_id": telegram_id_val,
+                                "first_name": "",
+                                "last_name": "",
+                            }
+
+            # 3. Haqiqiy Telegram Bot yaratgan otp:<code> kalitidan tekshirish (universal fallback)
+            if not data:
+                tg_id = await self.redis.get(f"otp:{code.strip()}")
+                if tg_id:
+                    telegram_id_val = int(tg_id.decode("utf-8") if isinstance(tg_id, bytes) else tg_id)
+                    data = {
+                        "code": code.strip(),
+                        "telegram_id": telegram_id_val,
+                        "first_name": "",
+                        "last_name": "",
+                    }
+
+        if not data:
+            raise OTPExpiredError("Tasdiqlash kodi eskirgan yoki topilmadi. Qaytadan urinib ko'ring.")
 
         if data["code"] != code.strip():
             raise InvalidOTPError("Kiritilgan tasdiqlash kodi noto'g'ri.")
 
         # Kod to'g'ri — OTP ni o'chiramiz
         await self.redis.delete(otp_key)
+        await self.redis.delete(f"tg_otp:auth_{auth_token}")
         await self.redis.delete(f"tg_auth:{auth_token}")
+        await self.redis.delete(f"otp:{code.strip()}")
 
         telegram_id = data["telegram_id"]
         tg_first_name = data.get("first_name", "")

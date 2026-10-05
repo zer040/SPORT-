@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -52,6 +53,18 @@ async def handle_start(message: types.Message, command: CommandObject):
     # Agar ilova session_id yuborgan bo'lsa, uni ham bog'lab qo'yamiz
     if session_id:
         await redis_client.setex(f"session:{session_id}", 300, otp_code)
+        clean_token = session_id[5:] if session_id.startswith("auth_") else session_id
+        otp_payload = json.dumps({
+            "code": otp_code,
+            "telegram_id": telegram_id,
+            "first_name": first_name,
+            "last_name": message.from_user.last_name or "",
+            "username": message.from_user.username or "",
+            "phone_number": None,
+        })
+        await redis_client.setex(f"tg_otp:{clean_token}", 300, otp_payload)
+        await redis_client.setex(f"tg_otp:{session_id}", 300, otp_payload)
+        await redis_client.setex(f"tg_auth:{clean_token}", 300, json.dumps({"status": "code_generated", "telegram_id": telegram_id}))
 
     # 4. Foydalanuvchiga xabar yuborish
     text = (

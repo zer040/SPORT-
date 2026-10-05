@@ -27,6 +27,10 @@ ios/SportPlus/
 │   │   └── NetworkManager.swift       # Async/await REST mijoz (Render backend)
 │   └── Storage/
 │       └── KeychainStorage.swift      # Xavfsiz JWT token saqlash
+├── LiveActivities/
+│   ├── MatchActivityAttributes.swift  # ActivityKit ma'lumotlar modeli va ContentState
+│   ├── MatchLiveActivityWidget.swift  # Dynamic Island (Compact/Expanded/Minimal) & Lock Screen
+│   └── LiveActivityManager.swift      # Client-side lifecycle va APNs push tokenni backendga yuborish
 ├── Models/
 │   ├── User.swift                     # Foydalanuvchi va Auth modellari
 │   ├── Venue.swift                    # Maydon, Pitch va Slot modellari
@@ -46,7 +50,15 @@ ios/SportPlus/
     ├── Matchmaking/
     │   └── SoloRadarView.swift        # Radar animatsiyasi va lobbiylar
     ├── Bookings/
-    │   └── MatchPassView.swift        # Apple Wallet formatidagi Match Pass
+    │   └── MatchPassView.swift        # Apple Wallet formatidagi Match Pass + Dynamic Island integratsiyasi
     └── Profile/
         └── ProfileView.swift          # Reliability badge va statistika
 ```
+
+## 🏝️ iOS Dynamic Island & Live Activities (30 daqiqalik Countdown)
+
+1. Foydalanuvchi stadion bron qilganda yoki chiptani ochganda `LiveActivityManager` ActivityKit'ni ishga tushiradi.
+2. Apple tizimidan olingan xavfsiz push token `POST /api/v1/live-activities/register` orqali backendga jo'natiladi.
+3. Backend foniy ishchisi (`_async_trigger_30min_live_activities` / Celery) o'yinga 30 daqiqa qolganda Apple APNs serveriga HTTP/2 orqali `liveactivity` push yuboradi.
+4. iPhone foydalanuvchisining Dynamic Island kengayib, stadion nomi, qolgan daqiqalar va jonli 1 soniyali taymer (`Text(style: .timer)`) bilan tebranadi.
+5. O'yin yakunlanganda tizim avtomatik tarzda `event: end` yuborib vidjetni ekrandan olib tashlaydi.

@@ -37,6 +37,19 @@ class ApiService {
           if (error.response?.statusCode == 401) {
             await clearToken();
           }
+          // Agar Render ulanishi xato bersa, lokal 10.0.2.2 ga urinib ko'rish
+          if ((error.type == DioExceptionType.connectionError ||
+               error.type == DioExceptionType.connectionTimeout) &&
+              error.requestOptions.baseUrl.contains('onrender.com')) {
+            try {
+              final newOptions = error.requestOptions;
+              newOptions.baseUrl = 'http://10.0.2.2:8000/api/v1';
+              final retryRes = await dio.fetch(newOptions);
+              return handler.resolve(retryRes);
+            } catch (_) {
+              return handler.next(error);
+            }
+          }
           return handler.next(error);
         },
       ),

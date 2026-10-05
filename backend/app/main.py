@@ -119,11 +119,39 @@ async def lifespan(app: FastAPI):
 
             bot_task = asyncio.create_task(_start_bot_background())
 
+    # ─── Live Activity 30-min Countdown Periodic Scheduler ────
+    async def _live_activity_periodic_worker():
+        from app.workers.booking_tasks import (
+            _async_trigger_30min_live_activities,
+            _async_cleanup_ended_live_activities,
+            _async_cleanup_expired_bookings,
+        )
+        logger.info("⏱️ Live Activity & Booking periodic worker ishga tushdi.")
+        while True:
+            try:
+                await _async_trigger_30min_live_activities()
+                await _async_cleanup_ended_live_activities()
+                await _async_cleanup_expired_bookings()
+            except asyncio.CancelledError:
+                break
+            except Exception as loop_err:
+                logger.debug(f"Live activity worker tick xatoligi: {loop_err}")
+            await asyncio.sleep(60)
+
+    live_activity_task = asyncio.create_task(_live_activity_periodic_worker())
+
     logger.info("✅ Sport+ backend tayyor!")
     yield
 
     # Graceful shutdown
     logger.info("🛑 Sport+ backend to'xtamoqda...")
+    if live_activity_task:
+        live_activity_task.cancel()
+        try:
+            await live_activity_task
+        except (asyncio.CancelledError, Exception):
+            pass
+
     if bot_task:
         logger.info("🛑 Telegram bot polling to'xtatilmoqda...")
         bot_task.cancel()
@@ -164,7 +192,7 @@ def create_app() -> FastAPI:
     # ─── CORS Middleware ──────────────────────
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
+        allow_origin_regex=".*",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

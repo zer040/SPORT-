@@ -27,6 +27,9 @@ from app.models.badge import Badge, UserBadge
 # Analytics modellari
 from app.models.analytics import AppInstallation, UserActivityLog
 
+# iOS Live Activities & Dynamic Island
+from app.models.live_activity import LiveActivitySession
+
 __all__ = [
     "User",
     "Venue",
@@ -49,4 +52,5 @@ __all__ = [
     "UserBadge",
     "AppInstallation",
     "UserActivityLog",
+    "LiveActivitySession",
 ]

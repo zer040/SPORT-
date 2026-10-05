@@ -1,14 +1,28 @@
 import { Platform } from 'react-native';
 
 // Production Cloud Backend URL (Render 24/7)
-export const API_URL = 'https://sport-jmu3.onrender.com/api/v1';
-export const BASE_URL = API_URL;
+export const RENDER_URL = 'https://sport-jmu3.onrender.com/api/v1';
 
-export const getBaseUrl = (): string => API_URL;
+// Local dev URL based on platform
+export const LOCAL_DEV_URL = Platform.select({
+  android: 'http://10.0.2.2:8000/api/v1',
+  ios: 'http://localhost:8000/api/v1',
+  default: 'http://localhost:8000/api/v1',
+}) || 'http://localhost:8000/api/v1';
 
-// Generic fetcher
+// Active API URL (production by default with automatic local failover)
+export let API_URL = RENDER_URL;
+export let BASE_URL = API_URL;
+
+export const setApiUrl = (newUrl: string) => {
+  API_URL = newUrl;
+  BASE_URL = newUrl;
+};
+
+export const getBaseUrl = (): string => BASE_URL;
+
+// Generic fetcher with resilient auto-failover
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}, token?: string | null): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
@@ -18,27 +32,51 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}, token?: 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // 1. Try current BASE_URL
   try {
-    const res = await fetch(url, { ...options, headers });
+    const primaryUrl = `${BASE_URL}${endpoint}`;
+    const res = await fetch(primaryUrl, { ...options, headers });
     const data = await res.json();
     if (!res.ok) {
       throw new Error(data?.error?.message || data?.detail || 'Xatolik yuz berdi');
     }
     return data as T;
   } catch (err: any) {
-    // Fallback attempt to Wi-Fi IP if emulator URL fails
-    if (url.includes('10.0.2.2') && Platform.OS === 'web') {
-      const fallbackUrl = `http://localhost:8000/api/v1${endpoint}`;
+    // 2. If primary failed due to network / cold-start, try failover
+    const failoverBase = BASE_URL === RENDER_URL ? LOCAL_DEV_URL : RENDER_URL;
+    try {
+      const fallbackUrl = `${failoverBase}${endpoint}`;
       const res = await fetch(fallbackUrl, { ...options, headers });
-      return await res.json();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || data?.detail || 'Xatolik yuz berdi');
+      }
+      BASE_URL = failoverBase;
+      API_URL = failoverBase;
+      return data as T;
+    } catch {
+      throw err;
     }
-    throw err;
   }
 }
 
 // ─── API Methods ──────────────────────────────────────────
 
 export const Api = {
+  // Telegram Auth Start
+  async startTelegramAuth() {
+    return apiFetch<{
+      success: boolean;
+      bot_username: string;
+      session_id: string;
+      deep_link: string;
+      web_link: string;
+      message?: string;
+    }>('/auth/telegram-start', {
+      method: 'POST',
+    });
+  },
+
   // Auth
   async sendOtp(phone_number: string) {
     return apiFetch<{ success: boolean; message: string }>('/auth/send-otp', {

@@ -3,12 +3,15 @@ Auth API Endpoints — OTP yuborish, tasdiqlash, JWT yangilash va profil ma'lumo
 Credential login (Owner/Admin uchun username+password) ham shu modulda.
 """
 
+import secrets
 from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 import redis.asyncio as redis
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
@@ -232,6 +235,40 @@ class CompleteRegistrationRequest(BaseModel):
     phone_number: str = Field(..., min_length=13, max_length=13, pattern=r"^\+998\d{9}$")
 
 
+@router.post(
+    "/telegram-start",
+    summary="Telegram avtorizatsiyani boshlash (Deep-link va bot ma'lumotlari)",
+)
+async def telegram_start(
+    db: Optional[AsyncSession] = Depends(get_db),
+    redis_client: Optional[redis.Redis] = Depends(get_redis),
+):
+    """
+    Mobil ilovadan Telegram orqali kirish bosilganda chaqiriladi.
+    Bot username va sessiya deep-linkini qaytaradi.
+    """
+    bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "sport_plus_uz_bot")
+    session_id = secrets.token_hex(8)
+
+    if redis_client:
+        try:
+            await redis_client.setex(f"tg_session:{session_id}", 600, "INITIATED")
+        except Exception:
+            pass
+
+    deep_link = f"tg://resolve?domain={bot_username}&start=auth_{session_id}"
+    web_link = f"https://t.me/{bot_username}?start=auth_{session_id}"
+
+    return {
+        "success": True,
+        "bot_username": bot_username,
+        "session_id": session_id,
+        "deep_link": deep_link,
+        "web_link": web_link,
+        "message": "Telegram sessiyasi boshlandi",
+    }
+
+
 @router.post("/verify-telegram-otp", summary="Telegram OTP kodini tasdiqlash")
 async def verify_telegram_otp(
     payload: VerifyTelegramOtpRequest,
@@ -286,8 +323,35 @@ async def verify_telegram_otp(
                 "is_first_login": False,
             }
 
-    # NEW_USER path
-    if not user or not user.is_profile_completed:
+    # NEW_USER path: bazada bo'lmasa avtomatik yaratish
+    if not user:
+        if db is not None:
+            try:
+                from datetime import datetime, timezone
+                from app.models.solo_player_profile import SoloPlayerProfile
+                user = User(
+                    telegram_id=telegram_id,
+                    full_name=f"Sportchi {str(telegram_id)[-4:]}",
+                    role="player",
+                    is_active=True,
+                    is_verified=True,
+                    is_profile_completed=True,
+                    last_login_at=datetime.now(timezone.utc),
+                )
+                db.add(user)
+                await db.flush()
+                solo_profile = SoloPlayerProfile(
+                    user_id=user.id,
+                    is_looking_for_game=False,
+                    reliability_score=100.00,
+                )
+                db.add(solo_profile)
+                await db.commit()
+                await db.refresh(user)
+            except Exception:
+                user = None
+
+    if not user:
         return {
             "status": "NEW_USER",
             "telegram_id": telegram_id,
