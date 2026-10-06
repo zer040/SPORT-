@@ -37,7 +37,7 @@ echo.
 echo Lokal Backend CRM ishga tushirilmoqda (FastAPI)...
 cd /d "%~dp0backend"
 start http://localhost:8000/admin
-call uvicorn app.main:app --reload
+call python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 goto end
 
 :end

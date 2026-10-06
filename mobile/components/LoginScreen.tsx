@@ -370,111 +370,139 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   // ══════════════════════════════════════════════════════════════
-  //  WELCOME / HERO SCREEN (1-Sahifa)
+  //  WELCOME / HERO SCREEN (1-Sahifa) — Enriched Design
   // ══════════════════════════════════════════════════════════════
   if (step === 'welcome') {
-    const glowOpacity = logoGlow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.65] });
+    const glowOpacity = logoGlow.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.75] });
+    const glowScale = logoGlow.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] });
 
     return (
       <View style={styles.fullScreen}>
-        <StatusBar barStyle="light-content" backgroundColor="#0A0F1E" />
+        <StatusBar barStyle="light-content" backgroundColor="#061C14" />
 
-        {/* Dark gradient background */}
+        {/* ── 1. Deep Dark Gradient Background ── */}
         <SafeGradient
-          colors={['#0A0F1E', '#0D1B2A', '#051C16']}
+          colors={['#0F172A', '#061C14', '#022C22']}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
 
-        {/* Ambient glow circles */}
-        <View style={styles.glowCircle1} />
-        <View style={styles.glowCircle2} />
+        {/* ── 2. Stadium Pitch Geometry (Ambient) ── */}
+        {/* Top-right radial glow */}
+        <View style={styles.pitchGlowTopRight} />
+        {/* Bottom-left radial glow */}
+        <View style={styles.pitchGlowBottomLeft} />
+        {/* Center pitch circle (yarim doira) */}
+        <View style={styles.pitchCenterCircle} />
+        {/* Stadium halfway line */}
+        <View style={styles.pitchHalfLine} />
+        {/* Corner arc top-left */}
+        <View style={styles.pitchCornerArcTL} />
+        {/* Corner arc bottom-right */}
+        <View style={styles.pitchCornerArcBR} />
 
-        {/* Main content */}
+        {/* ── 3. Animated Content (space-between layout) ── */}
         <Animated.View
           style={[
             styles.welcomeContent,
             { opacity: welcomeOpacity, transform: [{ scale: welcomeScale }] },
           ]}
         >
-          {/* Logo */}
-          <Animated.View style={[styles.welcomeLogoOuter, { opacity: glowOpacity }]}>
-            <View style={styles.welcomeLogoGlowRing} />
-          </Animated.View>
-          <View style={styles.welcomeLogoContainer}>
-            <SafeGradient
-              colors={['#10B981', '#059669', '#047857']}
-              style={styles.welcomeLogoGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.welcomeLogoChar}>S</Text>
-            </SafeGradient>
-          </View>
+          {/* ── TOP SPACER ── */}
+          <View style={styles.welcomeTopSpacer} />
 
-          {/* Brand title */}
-          <Text style={styles.welcomeBrandTitle}>
-            SPORT<Text style={styles.welcomeBrandAccent}>+</Text>
-          </Text>
-          <Text style={styles.welcomeTagline}>Intelligent Arena Ecosystem</Text>
+          {/* ── HERO CENTER BLOCK ── */}
+          <View style={styles.welcomeHeroBlock}>
+            {/* Outer animated aura ring */}
+            <Animated.View
+              style={[
+                styles.welcomeLogoAura,
+                { opacity: glowOpacity, transform: [{ scale: glowScale }] },
+              ]}
+            />
 
-          {/* Features list */}
-          <View style={styles.welcomeFeatures}>
-            {[
-              { icon: 'flash-outline', text: "Real vaqt slot bron qilish" },
-              { icon: 'people-outline', text: "Solo o'yin radari" },
-              { icon: 'shield-checkmark-outline', text: "Xavfsiz Telegram autentifikatsiya" },
-            ].map((f, i) => (
-              <View key={i} style={styles.welcomeFeatureRow}>
-                <View style={styles.welcomeFeatureIcon}>
-                  <Ionicons name={f.icon as any} size={15} color="#10B981" />
-                </View>
-                <Text style={styles.welcomeFeatureText}>{f.text}</Text>
+            {/* Logo container — glassmorphism */}
+            <View style={styles.welcomeLogoContainer}>
+              <SafeGradient
+                colors={['#10B981', '#059669', '#047857']}
+                style={styles.welcomeLogoGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.welcomeLogoChar}>S</Text>
+              </SafeGradient>
+            </View>
+
+            {/* Brand title */}
+            <Text style={styles.welcomeBrandTitle}>
+              SPORT<Text style={styles.welcomeBrandAccent}>+</Text>
+            </Text>
+            <Text style={styles.welcomeTagline}>Intelligent Arena Ecosystem</Text>
+
+            {/* ── Live Pulse Chips (matnlarni chip bilan almashtirish) ── */}
+            <View style={styles.welcomeChipRow}>
+              <View style={styles.welcomeChip}>
+                <Animated.View
+                  style={[
+                    styles.welcomeChipDot,
+                    { opacity: pulseAnim },
+                  ]}
+                />
+                <Text style={styles.welcomeChipText}>120+ Faol maydonlar</Text>
               </View>
-            ))}
+              <View style={styles.welcomeChip}>
+                <Ionicons name="flash" size={11} color="#10B981" />
+                <Text style={styles.welcomeChipText}>Tezkor bron</Text>
+              </View>
+            </View>
           </View>
 
-          {/* START BUTTON */}
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => {
-              try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
-              setStep('login');
-            }}
-            activeOpacity={0.88}
-          >
-            <SafeGradient
-              colors={['#059669', '#10B981', '#34D399']}
-              style={styles.startButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+          {/* ── BOTTOM ACTION BLOCK ── */}
+          <View style={styles.welcomeBottomBlock}>
+            {/* CTA Button */}
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch {}
+                setStep('login');
+              }}
+              activeOpacity={0.85}
             >
-              <Text style={styles.startButtonText}>Boshlash</Text>
-              <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-            </SafeGradient>
-          </TouchableOpacity>
+              <SafeGradient
+                colors={['#059669', '#10B981']}
+                style={styles.startButtonGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text style={styles.startButtonText}>Boshlash</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+              </SafeGradient>
+            </TouchableOpacity>
 
-          {/* Biznes & Admin qisqa yo'l */}
-          <TouchableOpacity
-            style={styles.staffShortcut}
-            onPress={() => {
-              setAuthMode('staff');
-              setStep('login');
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.staffShortcutText}>Biznes & Admin kirish</Text>
-            <Ionicons name="chevron-forward" size={13} color="#475569" />
-          </TouchableOpacity>
+            {/* Biznes & Admin qisqa yo'l */}
+            <TouchableOpacity
+              style={styles.staffShortcut}
+              onPress={() => {
+                setAuthMode('staff');
+                setStep('login');
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.staffShortcutText}>Biznes & Admin kirish</Text>
+              <Ionicons name="chevron-forward" size={13} color="#475569" />
+            </TouchableOpacity>
+
+            {/* Trust Badge */}
+            <View style={styles.welcomeTrustBadge}>
+              <Ionicons name="shield-checkmark-outline" size={12} color="#475569" />
+              <Text style={styles.welcomeTrustText}>Rasmiy hamkorlik</Text>
+              <View style={styles.welcomeTrustDivider} />
+              <Ionicons name="flash-outline" size={12} color="#475569" />
+              <Text style={styles.welcomeTrustText}>Real-time slotlar</Text>
+            </View>
+          </View>
         </Animated.View>
-
-        {/* Footer */}
-        <View style={styles.welcomeFooter}>
-          <Text style={styles.welcomeFooterText}>
-            Toshkent · Jizzax · Sport maydonlari platformasi
-          </Text>
-        </View>
       </View>
     );
   }
@@ -847,82 +875,133 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 };
 
 const styles = StyleSheet.create({
-  // ── Welcome Screen ──────────────────────────────────────────
+  // ── Welcome Screen (Enriched) ────────────────────────────────
   fullScreen: {
     flex: 1,
-    backgroundColor: '#0A0F1E',
+    backgroundColor: '#061C14',
   },
-  glowCircle1: {
+
+  // Stadium pitch geometry layers
+  pitchGlowTopRight: {
     position: 'absolute',
-    top: -80,
-    left: -80,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(5, 150, 105, 0.12)',
+    top: -120,
+    right: -80,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: 'rgba(16, 185, 129, 0.09)',
   },
-  glowCircle2: {
+  pitchGlowBottomLeft: {
     position: 'absolute',
     bottom: -100,
-    right: -60,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    left: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(5, 150, 105, 0.07)',
   },
+  pitchCenterCircle: {
+    position: 'absolute',
+    top: '38%',
+    alignSelf: 'center',
+    width: width * 0.85,
+    height: width * 0.85,
+    borderRadius: (width * 0.85) / 2,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.07)',
+    backgroundColor: 'transparent',
+  },
+  pitchHalfLine: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+  },
+  pitchCornerArcTL: {
+    position: 'absolute',
+    top: -36,
+    left: -36,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: 'transparent',
+  },
+  pitchCornerArcBR: {
+    position: 'absolute',
+    bottom: -36,
+    right: -36,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: 'transparent',
+  },
+
+  // Main layout — space-between
   welcomeContent: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 60,
+    justifyContent: 'space-between',
+    paddingHorizontal: 28,
+    paddingTop: 0,
   },
-  welcomeLogoOuter: {
+  welcomeTopSpacer: {
+    height: 60,
+  },
+  welcomeHeroBlock: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  // Logo aura — animated outer glow ring
+  welcomeLogoAura: {
     position: 'absolute',
-    top: '20%',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
     alignSelf: 'center',
   },
-  welcomeLogoGlowRing: {
-    position: 'absolute',
-    inset: -10,
-    borderRadius: 80,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-  },
   welcomeLogoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 32,
-    padding: 2,
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-    marginBottom: 24,
+    width: 114,
+    height: 114,
+    borderRadius: 36,
+    padding: 3,
+    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(16, 185, 129, 0.45)',
+    marginBottom: 26,
     shadowColor: '#10B981',
-    shadowOpacity: 0.5,
-    shadowRadius: 30,
-    elevation: 12,
+    shadowOpacity: 0.6,
+    shadowRadius: 36,
+    elevation: 14,
   },
   welcomeLogoGradient: {
     flex: 1,
-    borderRadius: 30,
+    borderRadius: 33,
     alignItems: 'center',
     justifyContent: 'center',
   },
   welcomeLogoChar: {
-    fontSize: 54,
+    fontSize: 60,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: -2,
   },
+
+  // Brand text
   welcomeBrandTitle: {
-    fontSize: 42,
+    fontSize: 44,
     fontWeight: '900',
-    letterSpacing: 2,
+    letterSpacing: 3,
     color: '#F8FAFC',
     marginBottom: 6,
   },
@@ -930,45 +1009,56 @@ const styles = StyleSheet.create({
     color: '#10B981',
   },
   welcomeTagline: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    letterSpacing: 3,
+    letterSpacing: 3.5,
     textTransform: 'uppercase',
     color: '#475569',
-    marginBottom: 40,
+    marginBottom: 28,
   },
-  welcomeFeatures: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 48,
+
+  // Live pulse chips
+  welcomeChipRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
   },
-  welcomeFeatureRow: {
+  welcomeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  welcomeFeatureIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    gap: 6,
   },
-  welcomeFeatureText: {
+  welcomeChipDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  welcomeChipText: {
     color: '#94A3B8',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
+  },
+
+  // Bottom action block
+  welcomeBottomBlock: {
+    width: '100%',
+    alignItems: 'center',
+    paddingBottom: 40,
   },
   startButton: {
     width: '100%',
     borderRadius: 18,
     overflow: 'hidden',
-    shadowColor: '#059669',
-    shadowOpacity: 0.45,
-    shadowRadius: 20,
+    shadowColor: '#10B981',
+    shadowOpacity: 0.4,
+    shadowRadius: 22,
     elevation: 10,
     marginBottom: 16,
   },
@@ -976,7 +1066,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: 19,
     gap: 10,
   },
   startButtonText: {
@@ -989,21 +1079,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    marginBottom: 8,
   },
   staffShortcutText: {
     color: '#475569',
     fontSize: 13,
     fontWeight: '500',
   },
-  welcomeFooter: {
+
+  // Trust badge (footer o'rnida)
+  welcomeTrustBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 32,
+    gap: 6,
+    paddingTop: 2,
   },
-  welcomeFooterText: {
+  welcomeTrustText: {
     color: '#334155',
     fontSize: 11,
-    letterSpacing: 0.5,
+    fontWeight: '500',
+  },
+  welcomeTrustDivider: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#334155',
+    marginHorizontal: 2,
   },
 
   // ── Login / OTP / Register Screens ──────────────────────────

@@ -35,8 +35,14 @@ async def lifespan(app: FastAPI):
         from sqlalchemy import text
         from app.core.database import engine, Base
         async with engine.begin() as conn:
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
-            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
+            try:
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            except Exception as ext_err:
+                logger.debug(f"PostGIS extension skipped ({ext_err})")
+            try:
+                await conn.execute(text("CREATE EXTENSION IF NOT EXISTS btree_gist;"))
+            except Exception as ext_err:
+                logger.debug(f"btree_gist extension skipped ({ext_err})")
             await conn.run_sync(Base.metadata.create_all)
             # Safe schema update for existing tables
             schema_updates = [
@@ -226,7 +232,19 @@ def create_app() -> FastAPI:
             },
         )
 
-    # ─── Health Check ────────────────────────
+    # ─── Root & Health Check ─────────────────
+    @app.get("/", tags=["System"])
+    async def root():
+        return {
+            "status": "online",
+            "service": settings.APP_NAME,
+            "version": "1.0.0",
+            "environment": settings.APP_ENV,
+            "docs_url": "/docs" if settings.DEBUG else None,
+            "health_url": "/health",
+            "admin_url": "/admin",
+        }
+
     @app.get("/health", tags=["System"])
     async def health_check():
         return {

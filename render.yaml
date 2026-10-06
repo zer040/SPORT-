@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: sport-backend
+    runtime: python
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: Sport+
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "true"
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        value: dev-secret-key-change-in-production
+      - key: JWT_SECRET_KEY
+        value: sportplus-jwt-secret-key-for-dev-2026
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        value: "30"
+      - key: DATABASE_URL
+        value: postgresql+asyncpg://postgres.gvjmapkcvshlppoyfzbh:sHohruxs_zer0@aws-0-ap-south-1.pooler.supabase.com:6543/postgres
+      - key: REDIS_URL
+        value: redis://localhost:6379/0
+      - key: TELEGRAM_BOT_TOKEN
+        value: 8512689865:AAHxthvkE8fNFB-vJgWjDyxiiKGUGaE9PFw
+      - key: TELEGRAM_BOT_USERNAME
+        value: sport_plus_uz_bot
+      - key: TELEGRAM_WEBHOOK_URL
+        value: https://sport-jmu3.onrender.com
+      - key: ADMIN_LOGIN
+        value: admin_sportplus
+      - key: ADMIN_PASSWORD
+        value: SizningKuchliParolingiz!2026
