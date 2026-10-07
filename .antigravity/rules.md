@@ -102,3 +102,15 @@ Vazifa faqat quyidagi shartlar to'liq bajarilgandagina yakunlangan hisoblanadi:
 - [ ] UI komponentlari barcha holatlarda (loading, empty, error) to'g'ri ishlaydi.
 - [ ] Yashirin ma'lumotlar (secrets/keys) kodga aralashib ketmagan.
 - [ ] Barcha kiritilgan o'zgarishlar mantiqan tushuntirilgan va hujjatlashtirilgan.
+
+---
+
+## 7. Tekshiruv Buyruqlari Protokoli (Automated Audit Execution)
+
+Agent har qanday fayl tahriri yoki yangi kod integratsiyasidan so'ng quyidagilarni bajaradi:
+1. Agar faqat sintaksis yoki format o'zgargan bo'lsa: `make fix`
+2. Vazifani yakunlashdan (Phase 5) oldin majburiy: `make check` (yoki Windows'da `.\verify.bat`)
+3. Agar `make check` chiqishida birorta xatolik yuz bersa:
+   - Agent topshiriqni "bajarildi" deb e'lon qilmaydi.
+   - Chiqqan stack trace yoki xatolik logini tahlil qilib, qayta tuzatadi va `make check` toza chiqqunga qadar siklni davom ettiradi.
+

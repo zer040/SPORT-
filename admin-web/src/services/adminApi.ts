@@ -3,8 +3,8 @@
  * Barcha so'rovlar xatosiz va to'liq himoyalangan formatda qaytariladi.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 
-  (localStorage.getItem('sportplus_use_local_backend') === 'true' 
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 
+  (typeof localStorage !== 'undefined' && localStorage.getItem('sportplus_use_local_backend') === 'true' 
     ? 'http://localhost:8000/api/v1/admin' 
     : 'https://sport-production-c0d6.up.railway.app/api/v1/admin');
 
