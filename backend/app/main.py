@@ -96,15 +96,19 @@ async def lifespan(app: FastAPI):
         )
         webhook_success = False
 
-        # Production muhitida va Webhook URL berilgan bo'lsa -> Webhook o'rnatiladi
-        is_production = settings.APP_ENV == "production"
-        if is_production and settings.TELEGRAM_WEBHOOK_URL and settings.TELEGRAM_WEBHOOK_URL.startswith("http"):
+        # Webhook URL berilgan bo'lsa -> Webhook o'rnatiladi
+        use_webhook = bool(
+            settings.TELEGRAM_WEBHOOK_URL
+            and settings.TELEGRAM_WEBHOOK_URL.strip().startswith("http")
+            and (settings.APP_ENV == "production" or "localhost" not in settings.TELEGRAM_WEBHOOK_URL)
+        )
+        if use_webhook:
             try:
                 webhook_url = f"{settings.TELEGRAM_WEBHOOK_URL.rstrip('/')}{settings.API_V1_PREFIX}/telegram-webhook"
                 logger.info(f"🔗 Telegram webhook o'rnatilmoqda: {webhook_url}")
                 await setup_bot_webhook(webhook_url)
                 webhook_success = True
-                logger.info("✅ Telegram Webhook muvaffaqiyatli ishga tushirildi!")
+                logger.info(f"✅ Telegram Webhook muvaffaqiyatli ishga tushirildi! ({webhook_url})")
             except Exception as e:
                 logger.warning(f"⚠️ Telegram webhook sozlashda xatolik: {e}. Polling rejimiga o'tilmoqda...")
                 webhook_success = False

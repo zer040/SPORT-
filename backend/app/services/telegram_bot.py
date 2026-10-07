@@ -116,8 +116,11 @@ async def handle_any_message(message: types.Message):
 
 async def process_telegram_update(update_dict: dict):
     """FastAPI webhookdan kelgan yangilanishni qayta ishlash"""
-    update = types.Update.model_validate(update_dict, context={"bot": bot})
-    await dp.feed_update(bot=bot, update=update)
+    try:
+        update = types.Update.model_validate(update_dict, context={"bot": bot})
+        await dp.feed_update(bot=bot, update=update)
+    except Exception as e:
+        logger.error(f"⚠️ Telegram webhook update qayta ishlashda xatolik: {e}", exc_info=True)
 
 async def setup_bot_webhook(webhook_url: str):
     """Telegram webhookni ro'yxatdan o'tkazish"""

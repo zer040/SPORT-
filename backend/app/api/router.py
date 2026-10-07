@@ -72,6 +72,17 @@ api_router.include_router(live_activity_router, prefix="/live-activities", tags=
 from typing import Dict, Any
 from app.services.telegram_bot import process_telegram_update
 
+@api_router.get("/telegram-webhook", summary="Telegram Webhook status", tags=["Telegram Bot"])
+@api_router.get("/telegram/webhook", summary="Telegram Webhook status (muqobil)", tags=["Telegram Bot"])
+async def telegram_webhook_status():
+    """Telegram Webhook endpoint faol ekanligini tekshirish uchun test endpoint"""
+    return {
+        "status": "online",
+        "service": "telegram_webhook",
+        "description": "Telegram bot webhook endpoint POST so'rovlarni qabul qilishga tayyor."
+    }
+
+
 @api_router.post("/telegram-webhook", summary="Telegram Webhook update qabul qilish", tags=["Telegram Bot"])
 @api_router.post("/telegram/webhook", summary="Telegram Webhook update qabul qilish (muqobil)", tags=["Telegram Bot"])
 async def telegram_webhook_handler(update: Dict[str, Any]):

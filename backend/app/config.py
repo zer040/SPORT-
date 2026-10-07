@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     # ─── Telegram Bot ─────────────────────────────
     TELEGRAM_BOT_TOKEN: str = "8512689865:AAHxthvkE8fNFB-vJgWjDyxiiKGUGaE9PFw"
     TELEGRAM_BOT_USERNAME: str = "sport_plus_uz_bot"
-    TELEGRAM_WEBHOOK_URL: str = "https://sport-jmu3.onrender.com"
+    TELEGRAM_WEBHOOK_URL: str = ""
     BOOKING_SERVICE_FEE_UZS: float = 10000.0
 
 
