@@ -1,0 +1,15 @@
+{
+  "name": "sportplus-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SPORT+ Monorepo root — audit scripts va husky pre-commit hook",
+  "scripts": {
+    "prepare": "husky",
+    "check": "powershell -ExecutionPolicy Bypass -File .\\verify.ps1",
+    "check:frontend": "cd admin-web && npm run verify:full",
+    "fix": "cd admin-web && npm run format:fix && npm run lint:fix"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

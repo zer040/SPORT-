@@ -90,15 +90,9 @@ export function App() {
         />
 
         <main className="flex-1 overflow-y-auto">
-          {currentTab === 'dashboard' && (
-            <DashboardView stats={stats} loading={loading} />
-          )}
-          {currentTab === 'venues' && (
-            <VenuesView venues={venues} onRefresh={loadAllData} />
-          )}
-          {currentTab === 'users' && (
-            <UsersView users={users} onRefresh={loadAllData} />
-          )}
+          {currentTab === 'dashboard' && <DashboardView stats={stats} loading={loading} />}
+          {currentTab === 'venues' && <VenuesView venues={venues} onRefresh={loadAllData} />}
+          {currentTab === 'users' && <UsersView users={users} onRefresh={loadAllData} />}
           {currentTab === 'transactions' && (
             <TransactionsView transactions={transactions} onRefresh={loadAllData} />
           )}

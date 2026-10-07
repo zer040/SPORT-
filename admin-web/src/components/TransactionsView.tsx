@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  CreditCard,
-  DollarSign,
-  CheckCircle2,
-  Clock,
-  RotateCcw,
-  ArrowUpRight,
-  Filter,
-} from 'lucide-react';
+import { CreditCard, CheckCircle2, Clock, RotateCcw } from 'lucide-react';
 import { AdminTransaction } from '../services/adminApi';
 
 interface TransactionsViewProps {
@@ -41,22 +33,25 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({ transactions
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
           <span className="text-xs font-bold text-slate-400 uppercase">Total Revenue</span>
           <p className="text-2xl font-black text-emerald-600 mt-1">
-            {totalFeeCollected.toLocaleString()} <span className="text-xs text-slate-400 font-bold">UZS</span>
+            {totalFeeCollected.toLocaleString()}{' '}
+            <span className="text-xs text-slate-400 font-bold">UZS</span>
           </p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
           <span className="text-xs font-bold text-slate-400 uppercase">Successful Payments</span>
-          <p className="text-2xl font-black text-slate-900 mt-1">
-            {paidCount}
-          </p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{paidCount}</p>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm">
           <span className="text-xs font-bold text-slate-400 uppercase">Payment Providers</span>
           <div className="flex items-center gap-3 mt-2">
-            <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-extrabold text-xs">Click</span>
-            <span className="px-2.5 py-1 rounded-md bg-cyan-50 text-cyan-700 font-extrabold text-xs">Payme</span>
+            <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 font-extrabold text-xs">
+              Click
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-cyan-50 text-cyan-700 font-extrabold text-xs">
+              Payme
+            </span>
           </div>
         </div>
       </div>
@@ -114,7 +109,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({ transactions
                       {/* ID */}
                       <td className="py-4 px-6 font-mono text-[11px] text-slate-500">
                         <span className="font-bold text-slate-800">#{t.id}</span>
-                        <p className="text-[10px] text-slate-400">{t.booking_id ? `Booking: ${t.booking_id}` : ''}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {t.booking_id ? `Booking: ${t.booking_id}` : ''}
+                        </p>
                       </td>
 
                       {/* User */}
@@ -152,8 +149,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({ transactions
                             isPaid
                               ? 'bg-emerald-50 text-emerald-700'
                               : isRefunded
-                              ? 'bg-rose-50 text-rose-700'
-                              : 'bg-amber-50 text-amber-700'
+                                ? 'bg-rose-50 text-rose-700'
+                                : 'bg-amber-50 text-amber-700'
                           }`}
                         >
                           {isPaid ? (

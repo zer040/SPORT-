@@ -1,6 +1,8 @@
 # OS files
 .DS_Store
 Thumbs.db
+*.dmg
+*.exe
 
 # Environment variables
 .env

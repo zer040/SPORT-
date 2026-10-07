@@ -20,26 +20,31 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "      [OK] Backend tekshiruvi muvaffaqiyatli." -ForegroundColor Green
 Write-Host ""
 
-# 2. Frontend / Admin-Web Build & Typecheck
-Write-Host "[2/3] Admin-Web TypeScript va Vite build tekshiruvi..." -ForegroundColor Yellow
+# 2. Frontend / Admin-Web Full Verification & Build
+Write-Host "[2/3] Admin-Web to'liq audit va Vite build tekshiruvi..." -ForegroundColor Yellow
 if (Test-Path "admin-web") {
     Push-Location "admin-web"
+    npm run verify:full
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        Write-Error "Admin-Web audit tekshiruvida (lint/typecheck/secrets) xatolik aniqlandi!"
+    }
     npm run build
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
         Write-Error "Admin-Web build xatosi yuz berdi!"
     }
     Pop-Location
-    Write-Host "      [OK] Admin-Web toza build boldi." -ForegroundColor Green
+    Write-Host "      [OK] Admin-Web toza (Types, Lint, Secrets, Build o'tdi)." -ForegroundColor Green
 }
 Write-Host ""
 
 # 3. Secret Leakage & Git Check
-Write-Host "[3/3] Git va Maxfiy kalitlar tekshiruvi..." -ForegroundColor Yellow
+Write-Host "[3/3] Git va Repozitoriy holati tekshiruvi..." -ForegroundColor Yellow
 git status -s
 Write-Host "      [OK] Git holati tekshirildi." -ForegroundColor Green
 Write-Host ""
 
 Write-Host "=========================================================" -ForegroundColor Cyan
-Write-Host "  LOYIHA TOLIQ TEKSHIRUVDAN OTDI! BARCHA MEZONLAR TOZA." -ForegroundColor Green
+Write-Host "  LOYIHA TO'LIQ TEKSHIRUVDAN O'TDI! BARCHA MEZONLAR TOZA." -ForegroundColor Green
 Write-Host "=========================================================" -ForegroundColor Cyan

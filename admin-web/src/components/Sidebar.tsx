@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  LayoutDashboard,
-  Building2,
-  Users,
-  CreditCard,
-  ShieldCheck,
-  LogOut,
-  Sliders,
-} from 'lucide-react';
+import { LayoutDashboard, Building2, Users, CreditCard, ShieldCheck } from 'lucide-react';
 
 export type AdminTab = 'dashboard' | 'venues' | 'users' | 'transactions';
 
@@ -34,11 +26,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange }) => 
               <img src="/logo-dark.png" alt="SPORT+" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-white font-extrabold text-lg tracking-tight leading-none">SPORT+</h1>
-              <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Admin Console</span>
+              <h1 className="text-white font-extrabold text-lg tracking-tight leading-none">
+                SPORT+
+              </h1>
+              <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">
+                Admin Console
+              </span>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">v1.2</span>
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+            v1.2
+          </span>
         </div>
 
         {/* Navigation Items */}

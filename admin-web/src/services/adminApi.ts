@@ -3,11 +3,69 @@
  * Barcha so'rovlar xatosiz va to'liq himoyalangan formatda qaytariladi.
  */
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 
-  (typeof localStorage !== 'undefined' && localStorage.getItem('sportplus_use_local_backend') === 'true' 
-    ? 'http://localhost:8000/api/v1/admin' 
-    : 'https://sport-production-c0d6.up.railway.app/api/v1/admin');
+interface RawUser {
+  id?: string | number;
+  telegram_id?: number | null;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  role?: string;
+  is_active?: boolean;
+  rating?: number;
+  total_games?: number;
+  venues_count?: number;
+  bookings_count?: number;
+  created_at?: string;
+}
 
+interface RawVenue {
+  id?: string | number;
+  name?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+  lat?: number;
+  lng?: number;
+  owner_id?: string;
+  owner_name?: string;
+  owner_phone?: string;
+  is_active?: boolean;
+  pitches_count?: number;
+  pitches?: unknown[];
+  primary_image_url?: string;
+  images?: string[];
+  created_at?: string;
+}
+
+interface RawTransaction {
+  id?: string | number;
+  booking_id?: string;
+  user_name?: string;
+  user_phone?: string;
+  venue_name?: string;
+  amount?: number;
+  service_fee?: number;
+  payment_status?: string;
+  status?: string;
+  payment_provider?: string;
+  provider?: string;
+  created_at?: string;
+}
+
+interface RawOwner {
+  id?: string | number;
+  full_name?: string;
+  phone_number?: string;
+  role?: string;
+}
+
+const API_BASE =
+  (import.meta as unknown as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ||
+  (typeof localStorage !== 'undefined' &&
+  localStorage.getItem('sportplus_use_local_backend') === 'true'
+    ? 'http://localhost:8000/api/v1/admin'
+    : 'https://sport-production-c0d6.up.railway.app/api/v1/admin');
 
 // Admin demo/session token (ADMIN roli bilan)
 let adminToken = localStorage.getItem('sportplus_admin_token') || 'admin-sportplus-super-token';
@@ -107,7 +165,10 @@ export interface AdminTransaction {
 export const AdminApi = {
   async getLiveMetrics(): Promise<LiveMetrics> {
     try {
-      const res = await fetch(`${API_BASE}/analytics/live-metrics`, { credentials: 'omit', headers: getHeaders() });
+      const res = await fetch(`${API_BASE}/analytics/live-metrics`, {
+        credentials: 'omit',
+        headers: getHeaders(),
+      });
       if (!res.ok) throw new Error('Live metrics fetch failed');
       const data = await res.json();
       return {
@@ -145,7 +206,10 @@ export const AdminApi = {
 
   async getStats(): Promise<DashboardStats> {
     try {
-      const res = await fetch(`${API_BASE}/dashboard-stats`, { credentials: 'omit', headers: getHeaders() });
+      const res = await fetch(`${API_BASE}/dashboard-stats`, {
+        credentials: 'omit',
+        headers: getHeaders(),
+      });
       if (!res.ok) throw new Error('Stats fetch failed');
       const data = await res.json();
       return {
@@ -182,14 +246,17 @@ export const AdminApi = {
         params.append('role', rNorm);
       }
 
-      const res = await fetch(`${API_BASE}/users?${params.toString()}`, { credentials: 'omit', headers: getHeaders() });
+      const res = await fetch(`${API_BASE}/users?${params.toString()}`, {
+        credentials: 'omit',
+        headers: getHeaders(),
+      });
       if (!res.ok) {
         console.warn('Users fetch failed:', res.status, res.statusText);
         throw new Error(`Users fetch failed: ${res.status}`);
       }
       const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.items || []);
-      return list.map((u: any) => ({
+      const list = Array.isArray(data) ? data : data.items || [];
+      return list.map((u: RawUser) => ({
         id: String(u.id || ''),
         telegram_id: u.telegram_id ?? null,
         full_name: u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || 'User',
@@ -234,8 +301,8 @@ export const AdminApi = {
       const res = await fetch(`${API_BASE}/venues`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Venues fetch failed');
       const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.items || []);
-      return list.map((v: any) => ({
+      const list = Array.isArray(data) ? data : data.items || [];
+      return list.map((v: RawVenue) => ({
         id: String(v.id || ''),
         name: v.name || 'Unnamed Venue',
         address: v.address || '',
@@ -248,7 +315,8 @@ export const AdminApi = {
         owner_phone: v.owner_phone,
         is_active: Boolean(v.is_active ?? true),
         pitches_count: v.pitches_count || (v.pitches ? v.pitches.length : 0),
-        primary_image_url: v.primary_image_url || (v.images && v.images.length > 0 ? v.images[0] : ''),
+        primary_image_url:
+          v.primary_image_url || (v.images && v.images.length > 0 ? v.images[0] : ''),
         images: v.images || [],
         created_at: v.created_at,
       }));
@@ -295,14 +363,16 @@ export const AdminApi = {
     try {
       // Backend path: /finance/transactions
       const params = status && status !== 'ALL' ? `?status_filter=${status}` : '';
-      const res = await fetch(`${API_BASE}/finance/transactions${params}`, { headers: getHeaders() });
+      const res = await fetch(`${API_BASE}/finance/transactions${params}`, {
+        headers: getHeaders(),
+      });
       if (!res.ok) {
         console.warn('Transactions fetch failed:', res.status);
         throw new Error(`Transactions fetch failed: ${res.status}`);
       }
       const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.items || []);
-      return list.map((t: any) => ({
+      const list = Array.isArray(data) ? data : data.items || [];
+      return list.map((t: RawTransaction) => ({
         id: String(t.id || ''),
         booking_id: t.booking_id || '',
         user_name: t.user_name || 'Unknown',
@@ -319,13 +389,15 @@ export const AdminApi = {
     }
   },
 
-  async getOwners(): Promise<{ id: string; full_name: string; phone_number?: string; role: string }[]> {
+  async getOwners(): Promise<
+    { id: string; full_name: string; phone_number?: string; role: string }[]
+  > {
     try {
       const res = await fetch(`${API_BASE}/owners`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Owners fetch failed');
       const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.items || []);
-      return list.map((o: any) => ({
+      const list = Array.isArray(data) ? data : data.items || [];
+      return list.map((o: RawOwner) => ({
         id: String(o.id || ''),
         full_name: o.full_name || 'Owner',
         phone_number: o.phone_number || '',

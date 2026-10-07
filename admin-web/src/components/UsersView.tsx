@@ -1,19 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Users,
-  Search,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Ban,
-  CheckCircle,
-  Phone,
-  Send,
-  Star,
-  RefreshCw,
-  Building2,
-  Calendar,
-} from 'lucide-react';
+import { Users, Search, Ban, CheckCircle, Phone, Send, Star, RefreshCw } from 'lucide-react';
 import { AdminApi, AdminUser } from '../services/adminApi';
 
 interface UsersViewProps {
@@ -26,7 +12,10 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'player' | 'owner' | 'admin'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'BLOCKED'>('ALL');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [actionNotice, setActionNotice] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   const showNotice = (type: 'success' | 'error', message: string) => {
     setActionNotice({ type, message });
@@ -43,8 +32,9 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
       } else {
         showNotice('error', 'Server error updating user role.');
       }
-    } catch (err: any) {
-      showNotice('error', err.message || 'Error updating user role.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error updating user role.';
+      showNotice('error', message);
     } finally {
       setUpdatingId(null);
     }
@@ -56,16 +46,14 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
       const nextStatus = !currentStatus;
       const ok = await AdminApi.updateUserStatus(userId, nextStatus);
       if (ok) {
-        showNotice(
-          'success',
-          nextStatus ? 'User successfully activated.' : 'User blocked.'
-        );
+        showNotice('success', nextStatus ? 'User successfully activated.' : 'User blocked.');
         onRefresh();
       } else {
         showNotice('error', 'Server error updating user status.');
       }
-    } catch (err: any) {
-      showNotice('error', err.message || 'Error updating user status.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error updating user status.';
+      showNotice('error', message);
     } finally {
       setUpdatingId(null);
     }
@@ -86,15 +74,15 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
       roleFilter === 'ALL'
         ? true
         : roleFilter === 'player'
-        ? uRole === 'player' || uRole === 'user'
-        : uRole === roleFilter;
+          ? uRole === 'player' || uRole === 'user'
+          : uRole === roleFilter;
 
     const matchesStatus =
       statusFilter === 'ALL'
         ? true
         : statusFilter === 'ACTIVE'
-        ? u.is_active === true
-        : u.is_active === false;
+          ? u.is_active === true
+          : u.is_active === false;
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -111,7 +99,10 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
           }`}
         >
           <span>{actionNotice.message}</span>
-          <button onClick={() => setActionNotice(null)} className="opacity-70 hover:opacity-100 font-black">
+          <button
+            onClick={() => setActionNotice(null)}
+            className="opacity-70 hover:opacity-100 font-black"
+          >
             ✕
           </button>
         </div>
@@ -211,8 +202,8 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
                     normalizedRole === 'admin'
                       ? 'bg-purple-50 text-purple-700 border-purple-200'
                       : normalizedRole === 'owner'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
                   const initials = (u.full_name || 'U').charAt(0).toUpperCase();
 
@@ -242,7 +233,9 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
                         <div className="space-y-1">
                           <p className="font-semibold text-slate-700 flex items-center gap-1.5">
                             <Send size={12} className="text-sky-500 shrink-0" />
-                            <span>{u.telegram_id ? `TG ID: ${u.telegram_id}` : 'No Telegram linked'}</span>
+                            <span>
+                              {u.telegram_id ? `TG ID: ${u.telegram_id}` : 'No Telegram linked'}
+                            </span>
                           </p>
                           <p className="text-slate-400 flex items-center gap-1.5">
                             <Phone size={11} className="shrink-0" />
@@ -274,7 +267,9 @@ export const UsersView: React.FC<UsersViewProps> = ({ users, onRefresh }) => {
                               : 'bg-rose-50 text-rose-700 border border-rose-200'
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                          />
                           {u.is_active ? 'Active' : 'Blocked'}
                         </span>
                       </td>

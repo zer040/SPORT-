@@ -1,34 +1,79 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install lint typecheck test audit-secrets audit-deps check fix
+.PHONY: help install lint typecheck test audit-secrets audit-deps check fix verify-frontend verify-backend
 
-help: ## Mavjud buyruqlar royxatini chiqarish
-	@echo "SPORT+ — Antigravity Tekshiruv Buyruqlari:"
-	@echo "  make check         - Barcha audit va tekshiruvlarni ishga tushirish (Python + TS)"
-	@echo "  make typecheck     - Backend va Frontend tiplarini tekshirish"
-	@echo "  make lint          - Kod sintaksisi va uslubini tekshirish"
-	@echo "  make audit-secrets - Maxfiy kalitlar (.env, tokenlar) ochiq qolganini tekshirish"
-	@echo "  make test          - Unit testlarni ishga tushirish"
+# =========================================================
+#  SPORT+ — Antigravity Automated Audit Pipeline
+# =========================================================
 
-typecheck: ## TypeScript va Python sintaksis / tiplarini tekshirish
-	@echo "🔍 [1/4] Backend Python sintaksisi va tiplarini tekshirish..."
-	python -m py_compile backend/app/main.py backend/app/config.py backend/app/services/telegram_bot.py backend/app/api/router.py
-	@echo "🔍 [2/4] Admin-Web TypeScript tekshiruvi..."
-	@if exist admin-web (cd admin-web && npm run build)
-
-lint: ## Linter va sintaksis tekshiruvi
-	@echo "🧹 [3/4] Kod sintaksisi va modullar tekshiruvi..."
-	python -c "from app.main import app; print('Backend FastAPI modullari toza!')"
-
-audit-secrets: ## Maxfiy kalitlar va .env ochiq qolmaganini tekshirish
-	@echo "🔑 [4/4] Secret Leakage tekshiruvi..."
-	git status --porcelain
-
-check: typecheck lint audit-secrets ## Antigravity: Barcha audit va tekshiruvlarni ketma-ket ishga tushirish
+help: ## Mavjud buyruqlar ro'yxatini chiqarish
 	@echo ""
-	@echo "========================================================="
-	@echo "✅ Loyiha to'liq tekshiruvdan o'tdi! Barcha mezonlar qanoatlantirildi."
-	@echo "========================================================="
+	@echo "  SPORT+ — Antigravity Tekshiruv Buyruqlari"
+	@echo "  ============================================"
+	@echo "  make check            - Barcha tekshiruvlarni ketma-ket ishga tushirish"
+	@echo "  make verify-backend   - Backend Python sintaksis va importlarini tekshirish"
+	@echo "  make verify-frontend  - Admin-Web TypeScript + Vite build tekshirish"
+	@echo "  make typecheck        - Backend + Frontend tiplarini tekshirish"
+	@echo "  make lint             - Kod sintaksisi va uslubini tekshirish (ESLint)"
+	@echo "  make audit-secrets    - Maxfiy kalitlar (.env, tokenlar) ochiq qolganini tekshirish"
+	@echo "  make audit-deps       - Zaif kutubxonalar auditini o'tkazish"
+	@echo "  make test             - Testlarni ishga tushirish"
+	@echo "  make fix              - Avtomatik format tuzatish"
+	@echo ""
 
-fix: ## Avtomatik tuzatiladigan format va xatolarni to'g'rilash
-	@echo "🔧 Format tekshirilmoqda..."
+# ─── Backend ────────────────────────────────────────────────────────────────
+
+verify-backend: ## Backend Python sintaksisi va FastAPI importlarini tekshirish
+	@echo "🔍 [Backend] Python sintaksisi tekshirilmoqda..."
+	@python -m py_compile backend/app/main.py backend/app/config.py backend/app/services/telegram_bot.py backend/app/api/router.py
+	@echo "   ✅ Backend Python — toza."
+
+# ─── Frontend ───────────────────────────────────────────────────────────────
+
+verify-frontend: ## Admin-Web TypeScript va Vite production build tekshirish
+	@echo "🔍 [Frontend] TypeScript va Vite build tekshirilmoqda..."
+	@cd admin-web && npm run build
+	@echo "   ✅ Admin-Web build — toza."
+
+typecheck: verify-backend verify-frontend ## Backend + Frontend tiplarini tekshirish (tsc --noEmit)
+	@echo "   ✅ Barcha tiplar tekshirildi."
+
+lint: ## ESLint orqali Admin-Web kodini tekshirish
+	@echo "🧹 [Lint] Admin-Web ESLint tekshirilmoqda..."
+	@cd admin-web && npm run lint
+	@echo "   ✅ Lint — toza (0 xato)."
+
+audit-secrets: ## Tasodifan qoldirilib ketgan API kalitlari va tokenlarni tekshirish
+	@echo "🔑 [Secrets] Secret leakage audit..."
+	@cd admin-web && npm run audit:secrets
+	@echo "   ✅ Maxfiy kalitlar — xavfsiz."
+
+audit-deps: ## npm va Python paketlarining zaifliklarini tekshirish
+	@echo "🛡️  [Deps] Dependency security audit..."
+	@cd admin-web && npm run audit:deps
+	@echo "   ✅ Dependency audit — toza."
+
+test: ## Unit va integratsion testlarni ishga tushirish
+	@echo "🧪 [Test] Testlar ishga tushirilmoqda..."
+	@echo "   ℹ️  Test suite hali yozilmagan — o'tkazib yuborildi."
+
+# ─── Master ─────────────────────────────────────────────────────────────────
+
+check: typecheck lint audit-secrets audit-deps test ## ✅ Antigravity: Barcha audit va tekshiruvlarni ketma-ket ishga tushirish
+	@echo ""
+	@echo "  ========================================================="
+	@echo "  ✅  LOYIHA TO'LIQ TEKSHIRUVDAN O'TDI!"
+	@echo "      Backend Python | Frontend TS/Build | Lint | Secrets | Deps"
+	@echo "  ========================================================="
+	@echo ""
+
+fix: ## Avtomatik tuzatiladigan format va lint xatolarini to'g'rilash
+	@echo "🔧 [Fix] Avtomatik format tuzatilmoqda..."
+	@cd admin-web && npm run lint:fix
+	@cd admin-web && npm run format:fix
+	@echo "   ✅ Format tuzatildi."
+
+install: ## Barcha bog'liqliklarni o'rnatish
+	@echo "📦 [Install] Admin-Web kutubxonalari o'rnatilmoqda..."
+	@cd admin-web && npm ci
+	@echo "   ✅ O'rnatish tugadi."

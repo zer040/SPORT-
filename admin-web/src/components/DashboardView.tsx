@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   DollarSign,
-  TrendingUp,
   Users,
   Building2,
   CalendarCheck,
   CheckCircle2,
-  AlertCircle,
   Percent,
-  Sparkles,
   Smartphone,
-  Radio,
-  Clock,
-  Activity,
 } from 'lucide-react';
 import { AdminApi, DashboardStats, LiveMetrics } from '../services/adminApi';
 
@@ -21,7 +15,7 @@ interface DashboardViewProps {
   loading: boolean;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: parentLoading }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: _parentLoading }) => {
   const [live, setLive] = useState<LiveMetrics>({
     online_users_now: 0,
     app_installations: {
@@ -44,20 +38,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
     },
   });
 
-  const [lastUpdated, setLastUpdated] = useState<string>('Just now');
-  const [liveLoading, setLiveLoading] = useState(false);
-
   const fetchLiveMetrics = async () => {
     try {
       const data = await AdminApi.getLiveMetrics();
       setLive(data);
-      const now = new Date();
-      setLastUpdated(
-        `${now.getHours().toString().padStart(2, '0')}:${now
-          .getMinutes()
-          .toString()
-          .padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
-      );
     } catch {
       // Keep previous or default 0s
     }
@@ -92,14 +76,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-6 border border-slate-700/80 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="z-10">
-          <h3 className="text-xl font-extrabold tracking-tight">
-            Service Fee: 10,000 UZS / slot
-          </h3>
+          <h3 className="text-xl font-extrabold tracking-tight">Service Fee: 10,000 UZS / slot</h3>
         </div>
         <div className="bg-slate-950/70 border border-slate-700 rounded-xl px-5 py-3 shrink-0 text-right z-10">
-          <div className="text-xs text-slate-400 font-semibold mb-0.5">
-            Total Revenue
-          </div>
+          <div className="text-xs text-slate-400 font-semibold mb-0.5">Total Revenue</div>
           <p className="text-2xl font-black text-emerald-400">{revenueDisplay}</p>
         </div>
       </div>
@@ -196,9 +176,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
           </div>
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Venues</p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">
-              {live.venues.total_active}
-            </p>
+            <p className="text-2xl font-black text-slate-900 mt-0.5">{live.venues.total_active}</p>
           </div>
         </div>
 
@@ -208,9 +186,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
           </div>
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Occupancy</p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">
-              {s.occupancy_rate}%
-            </p>
+            <p className="text-2xl font-black text-slate-900 mt-0.5">{s.occupancy_rate}%</p>
           </div>
         </div>
       </div>
@@ -225,9 +201,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
 
           <div className="grid grid-cols-3 gap-4 pt-2">
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase">Total Service Revenue</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">
+                Total Service Revenue
+              </span>
               <p className="text-xl font-extrabold text-slate-900 mt-1 truncate">
-                {live.financials.platform_revenue_uzs.toLocaleString()} <span className="text-xs text-slate-400 font-medium">UZS</span>
+                {live.financials.platform_revenue_uzs.toLocaleString()}{' '}
+                <span className="text-xs text-slate-400 font-medium">UZS</span>
               </p>
               <div className="w-full bg-slate-200 h-1.5 rounded-full mt-3 overflow-hidden">
                 <div
@@ -256,7 +235,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
             </div>
 
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase">Held (Pending Payment)</span>
+              <span className="text-xs font-bold text-slate-400 uppercase">
+                Held (Pending Payment)
+              </span>
               <p className="text-xl font-extrabold text-amber-600 mt-1">
                 {live.bookings.currently_held}
               </p>
@@ -285,7 +266,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
                 <CheckCircle2 size={18} className="text-emerald-600" />
                 <p className="text-xs font-bold text-slate-900">Confirmed bookings</p>
               </div>
-              <span className="text-base font-black text-emerald-700">{live.bookings.total_confirmed}</span>
+              <span className="text-base font-black text-emerald-700">
+                {live.bookings.total_confirmed}
+              </span>
             </div>
 
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-50/60 border border-amber-100">
@@ -293,7 +276,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
                 <CalendarCheck size={18} className="text-amber-600" />
                 <p className="text-xs font-bold text-slate-900">Pending bookings</p>
               </div>
-              <span className="text-base font-black text-amber-700">{live.bookings.currently_held}</span>
+              <span className="text-base font-black text-amber-700">
+                {live.bookings.currently_held}
+              </span>
             </div>
 
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-blue-50/60 border border-blue-100">
@@ -301,7 +286,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ stats, loading: pa
                 <Smartphone size={18} className="text-blue-600" />
                 <p className="text-xs font-bold text-slate-900">Unique devices</p>
               </div>
-              <span className="text-base font-black text-blue-700">{live.app_installations.total}</span>
+              <span className="text-base font-black text-blue-700">
+                {live.app_installations.total}
+              </span>
             </div>
           </div>
         </div>

@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Building2,
-  Plus,
-  MapPin,
-  Phone,
-  User,
-  Trash2,
-  Image,
-  Check,
-  X,
-  Layers,
-  Sparkles,
-} from 'lucide-react';
+import { Building2, Plus, MapPin, User, Trash2, Image, X } from 'lucide-react';
 import { AdminApi, AdminVenue } from '../services/adminApi';
 
 interface VenuesViewProps {
@@ -21,7 +9,9 @@ interface VenuesViewProps {
 
 export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [owners, setOwners] = useState<{ id: string; full_name: string; phone_number?: string; role: string }[]>([]);
+  const [owners, setOwners] = useState<
+    { id: string; full_name: string; phone_number?: string; role: string }[]
+  >([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -36,7 +26,7 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
   const [format, setFormat] = useState('7x7');
   const [pricePerHour, setPricePerHour] = useState('140000');
   const [ownerId, setOwnerId] = useState('');
-  
+
   // Facilities
   const [facilityShower, setFacilityShower] = useState(true);
   const [facilityLighting, setFacilityLighting] = useState(true);
@@ -44,9 +34,15 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
   const [facilityChangingRoom, setFacilityChangingRoom] = useState(true);
 
   // Multi-image URLs (kamida 3 ta)
-  const [imageUrl1, setImageUrl1] = useState('https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80');
-  const [imageUrl2, setImageUrl2] = useState('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=800&q=80');
-  const [imageUrl3, setImageUrl3] = useState('https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=800&q=80');
+  const [imageUrl1, setImageUrl1] = useState(
+    'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=800&q=80'
+  );
+  const [imageUrl2, setImageUrl2] = useState(
+    'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=800&q=80'
+  );
+  const [imageUrl3, setImageUrl3] = useState(
+    'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=800&q=80'
+  );
 
   useEffect(() => {
     AdminApi.getOwners().then((list) => {
@@ -90,8 +86,8 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
 
       setModalOpen(false);
       onRefresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to create venue');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Failed to create venue');
     } finally {
       setSubmitting(false);
     }
@@ -162,9 +158,13 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-slate-950/80 text-emerald-400 backdrop-blur-md border border-slate-700">
                       {v.pitches_count} pitches
                     </span>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold backdrop-blur-md ${
-                      v.is_active ? 'bg-emerald-500/90 text-slate-950' : 'bg-slate-800 text-slate-300'
-                    }`}>
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold backdrop-blur-md ${
+                        v.is_active
+                          ? 'bg-emerald-500/90 text-slate-950'
+                          : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
                       {v.is_active ? 'ACTIVE' : 'INACTIVE'}
                     </span>
                   </div>
@@ -173,7 +173,9 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 {/* Content Details */}
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                   <div>
-                    <h4 className="text-base font-extrabold text-slate-900 leading-snug">{v.name}</h4>
+                    <h4 className="text-base font-extrabold text-slate-900 leading-snug">
+                      {v.name}
+                    </h4>
                     <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1.5">
                       <MapPin size={13} className="text-slate-400 shrink-0" />
                       <span className="truncate">{v.address}</span>
@@ -187,7 +189,9 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                         <User size={14} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-800 truncate">{v.owner_name || 'No owner assigned'}</p>
+                        <p className="text-xs font-bold text-slate-800 truncate">
+                          {v.owner_name || 'No owner assigned'}
+                        </p>
                         <p className="text-[10px] text-slate-400">{v.owner_phone || '+998...'}</p>
                       </div>
                     </div>
@@ -236,9 +240,11 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
               )}
 
               {/* Name & City */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Venue Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Venue Name *
+                  </label>
                   <input
                     type="text"
                     required
@@ -258,10 +264,23 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">District *</label>
+                  <input
+                    type="text"
+                    required
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    placeholder="e.g. Chilonzor"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Full Address *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Full Address *
+                </label>
                 <input
                   type="text"
                   required
@@ -272,10 +291,23 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="e.g. Modern indoor turf with LED lighting"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
+
               {/* Format, Price and Geolocation */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Pitch Format</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Pitch Format
+                  </label>
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value)}
@@ -288,7 +320,9 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Hourly Rate (UZS)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Hourly Rate (UZS)
+                  </label>
                   <input
                     type="number"
                     value={pricePerHour}
@@ -320,7 +354,9 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
 
               {/* Assigned Venue Owner */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Assigned Venue Owner</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Assigned Venue Owner
+                </label>
                 <select
                   value={ownerId}
                   onChange={(e) => setOwnerId(e.target.value)}
@@ -337,22 +373,44 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
 
               {/* Amenities & Facilities */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Amenities & Facilities</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Amenities & Facilities
+                </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
-                    <input type="checkbox" checked={facilityShower} onChange={(e) => setFacilityShower(e.target.checked)} className="rounded text-emerald-600" />
+                    <input
+                      type="checkbox"
+                      checked={facilityShower}
+                      onChange={(e) => setFacilityShower(e.target.checked)}
+                      className="rounded text-emerald-600"
+                    />
                     <span>Shower</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
-                    <input type="checkbox" checked={facilityLighting} onChange={(e) => setFacilityLighting(e.target.checked)} className="rounded text-emerald-600" />
+                    <input
+                      type="checkbox"
+                      checked={facilityLighting}
+                      onChange={(e) => setFacilityLighting(e.target.checked)}
+                      className="rounded text-emerald-600"
+                    />
                     <span>Lighting</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
-                    <input type="checkbox" checked={facilityParking} onChange={(e) => setFacilityParking(e.target.checked)} className="rounded text-emerald-600" />
+                    <input
+                      type="checkbox"
+                      checked={facilityParking}
+                      onChange={(e) => setFacilityParking(e.target.checked)}
+                      className="rounded text-emerald-600"
+                    />
                     <span>Parking</span>
                   </label>
                   <label className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 text-xs font-semibold cursor-pointer">
-                    <input type="checkbox" checked={facilityChangingRoom} onChange={(e) => setFacilityChangingRoom(e.target.checked)} className="rounded text-emerald-600" />
+                    <input
+                      type="checkbox"
+                      checked={facilityChangingRoom}
+                      onChange={(e) => setFacilityChangingRoom(e.target.checked)}
+                      className="rounded text-emerald-600"
+                    />
                     <span>Locker Room</span>
                   </label>
                 </div>
@@ -360,7 +418,9 @@ export const VenuesView: React.FC<VenuesViewProps> = ({ venues, onRefresh }) => 
 
               {/* Multi-Image URLs (3 URLs) */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700">Venue Photos (Image URLs)</label>
+                <label className="block text-xs font-bold text-slate-700">
+                  Venue Photos (Image URLs)
+                </label>
                 <input
                   type="url"
                   value={imageUrl1}

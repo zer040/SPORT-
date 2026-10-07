@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Bell, Shield, Radio } from 'lucide-react';
+import { RefreshCw, Shield } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -8,12 +8,7 @@ interface HeaderProps {
   loading: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  title,
-  subtitle,
-  onRefresh,
-  loading,
-}) => {
+export const Header: React.FC<HeaderProps> = ({ title, subtitle, onRefresh, loading }) => {
   return (
     <header className="h-20 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-20">
       <div>
