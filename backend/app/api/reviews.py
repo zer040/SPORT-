@@ -4,7 +4,7 @@ Reviews API Router — maydonlarni baholash, sharhlar va majburiy review logikas
 
 from datetime import datetime, timezone
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
