@@ -8,46 +8,46 @@
 - Backend: FastAPI + SQLAlchemy (async) + PostgreSQL (PostGIS + btree_gist) + Render
 - Mobile: React Native + Expo (TypeScript)
 - Auth: Telegram OTP bot (`@sport_plus_uz_bot`)
-- Deploy: `https://sport-jmu3.onrender.com`
+- Deploy: `https://sport-production-c0d6.up.railway.app` (Railway 24/7)
 
 ---
 
-## 🧠 Agent Operating Directive (Claude Reasoning Pattern)
+## 🧠 Antigravity Autonomous Agent Execution Framework & Protocols (Claude Reasoning Pattern)
 
-Har bir topshiriqni bajarishda quyidagi chuqur fikrlash va qat'iy agentlik tamoyillariga amal qilinadi:
+Har bir topshiriqni bajarishda quyidagi 5 bosqichli operatsion sikl va qat'iy standartlarga amal qilinadi:
 
-1. **Think Before You Act (Scratchpad / CoT)**:
-   - Hech qachon asossiz kod yozmang yoki vositalarni ko'r-ko'rona ishga tushirmang.
-   - Avval mavjud arxitekturani tahlil qiling (FastAPI backend, Expo/React Native mobile, Vite/React admin-web, Supabase PostgreSQL).
-   - Fikrlash (thinking) bloki ichida bosqichma-bosqich gipoteza va rejani aniqlang.
-
-2. **Minimal Surgical Diffs (Preserve Existing Code)**:
-   - 5-10 qator o'zgarish uchun butun faylni qayta yozib tashlamang.
-   - Mavjud konfiguratsiyalar, kommentlar, docstringlar va uslublarni saqlang.
-   - Faqat nishonga olingan aniq diff / almashtirishlarni qo'llang.
-
-3. **Autonomous Verification Loop (O'z-o'zini Tekshirish)**:
-   - Backend yoki DB o'zgarganda: `python -m py_compile` bilan sintaksis tekshiring, loglarni ko'ring.
-   - Frontend o'zgarganda: `tsc` / `npm run build` bilan tekshiring.
-   - Agar xatolik (500, fetch failed, syntax error) yuz bersa, foydalanuvchidan so'ramasdan o'zingiz ildiz sababini aniqlab avtonom tuzating.
-
-4. **Lakonik va Texnik Aloqa**:
-   - Ortiqcha gaplarsiz, aniq texnik natijalar va fayl havolalari bilan javob bering.
+### 1. Asosiy Operatsion Sikl (Thinking & Execution Loop)
+1. **PHASE 1: Analyze & Plan (Tahlil va Reja)**:
+   - Vazifaning asl maqsadini, cheklovlarini va tizimga ta'sirini aniqlash.
+   - O'zgaradigan yoki yaratiladigan fayllar strukturasini shakllantirish.
+   - Mumkin bo'lgan muammolar, edge case'lar va integratsiya risklarini oldindan sanab chiqish.
+2. **PHASE 2: Design & UI/UX Spec (Agar frontend/interfeys bo'lsa)**:
+   - Dizayn tizimi tokenlari (rang palitrasi, tipografiya, padding/spacing, radius)ni belgilash.
+   - Accessibility (WCAG 2.1 AA) va responsive adaptatsiya talablarini hisobga olish.
+3. **PHASE 3: Implementation (Minimal Jarrohlik Diff)**:
+   - Rejaga qat'iy muvofiq, toza, modulli va type-safe kod yozish.
+   - Minimal surgical diffs (5-10 qator uchun butun faylni qayta yozmaslik).
+   - Placeholder yoki to'liq bo'lmagan "TODO" yechimlardan qochish.
+4. **PHASE 4: Static Audit & Security Check (Xavfsizlik va Linter)**:
+   - Statik tahlil (linter, types, security audit) natijalarini ko'rib chiqish.
+   - Injection (SQL/XSS), CORS, Auth, Input Sanitization, Secret Leakage tekshirish.
+5. **PHASE 5: Verification (O'z-o'zini Tekshirish)**:
+   - Backend/DB: `python -m py_compile` bilan sintaksis tekshirish, loglarni ko'rish.
+   - Frontend: `tsc` / `npm run build` bilan tekshirish.
+   - Agar xatolik (500, fetch failed, syntax error) yuz bersa, avtonom tuzatish.
 
 ---
 
-## Sub-Agent Ishlatish Qoidalari
+## Virtual Sub-Agent Rollari va Mas'uliyatlar
 
-Bu loyihada quyidagi sub-agent skilllardan foydalaning (`~/.gemini/config/skills/agents/`):
+Vazifani bajarishda agent quyidagi virtual mutaxassislar filtri orqali fikrlaydi:
 
-| Vaziyat | Agent |
-|---|---|
-| Yangi feature request | Avval `agent-planner` ni o'qing |
-| Yangi modul yoki DB schema | Avval `agent-architect` ni o'qing |
-| Kod yozilgandan keyin | Avtomatik `agent-code-reviewer` |
-| Auth / payment / API kod | Avtomatik `agent-security-reviewer` |
-| Bug fix yoki yangi feature | `agent-tdd` bilan test yozing |
-| Eski kodni tozalash | `agent-refactor` |
+| Sub-Agent | Mas'uliyati | Qoidasi |
+|---|---|---|
+| **Architect & Planner** | Muammoni dekonstruktsiya qilish, fayllar strukturasini belgilash | Hech qanday kod yozmaydi, faqat algoritm va reja tuzadi. |
+| **UI/UX Specialist** | Design System, CSS/Tailwind, komponentlar iyerarxiyasi | Hech qachon "taxminiy" padding/rang ishlatmaydi, tizimli dizayn tokenlariga tayanadi. |
+| **Core Dev** | Asosiy backend/frontend mantiqini yozish | Rejaga qat'iy amal qiladi, type-safe, toza kod. |
+| **Security & QA Auditor** | Zaifliklar, chekka holatlar (edge cases) va xatolarni tekshirish | Kodni sindirishga (pen-test, boundary check) harakat qiladi. |
 
 ---
 
