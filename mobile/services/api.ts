@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
-// Production Cloud Backend URL (Render 24/7)
+// Production Cloud Backend URL (Railway 24/7)
+export const RAILWAY_URL = 'https://sport-production-c0d6.up.railway.app/api/v1';
 export const RENDER_URL = 'https://sport-jmu3.onrender.com/api/v1';
 
 // Local dev URL based on platform
@@ -10,8 +11,8 @@ export const LOCAL_DEV_URL = Platform.select({
   default: 'http://localhost:8000/api/v1',
 }) || 'http://localhost:8000/api/v1';
 
-// Active API URL (production by default with automatic local failover)
-export let API_URL = RENDER_URL;
+// Active API URL (Railway production by default with automatic local failover)
+export let API_URL = RAILWAY_URL;
 export let BASE_URL = API_URL;
 
 export const setApiUrl = (newUrl: string) => {

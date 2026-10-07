@@ -16,7 +16,7 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # .env dan olinadi
-BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "8512689865:AAHxthvkE8fNFB-vJgWjDyxiiKGUGaE9PFw")
+BOT_TOKEN = settings.TELEGRAM_BOT_TOKEN or os.getenv("TELEGRAM_BOT_TOKEN", "8512689865:AAFYLPF-_952YW4dz9gy23ys4S5Wtl914l4")
 REDIS_URL = settings.REDIS_URL or os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Rasmiy Sport+ bot logo yo'li

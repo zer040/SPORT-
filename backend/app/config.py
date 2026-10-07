@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     PAYME_MERCHANT_KEY: str = ""
 
     # ─── Telegram Bot ─────────────────────────────
-    TELEGRAM_BOT_TOKEN: str = "8512689865:AAHxthvkE8fNFB-vJgWjDyxiiKGUGaE9PFw"
+    TELEGRAM_BOT_TOKEN: str = "8512689865:AAFYLPF-_952YW4dz9gy23ys4S5Wtl914l4"
     TELEGRAM_BOT_USERNAME: str = "sport_plus_uz_bot"
     TELEGRAM_WEBHOOK_URL: str = ""
     BOOKING_SERVICE_FEE_UZS: float = 10000.0

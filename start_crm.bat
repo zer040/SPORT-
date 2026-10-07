@@ -5,11 +5,11 @@ echo ====================================================================
 echo              SPORT+ CRM — Administrator Boshqaruv Markazi
 echo ====================================================================
 echo.
-echo [1] Cloud CRM (Eng qulay: https://sport-jmu3.onrender.com/admin)
+echo [1] Cloud CRM (Eng qulay: https://sport-production-c0d6.up.railway.app/admin)
 echo     - 24/7 bulutda ishlab turibdi, hech narsa o'rnatmasdan brauzerda ochiladi.
 echo.
 echo [2] Lokal React CRM (admin-web: http://localhost:5173)
-echo     - Vite + React interfeysi, Render bulut API ga to'liq ulangan.
+echo     - Vite + React interfeysi, Railway bulut API ga to'liq ulangan.
 echo.
 echo [3] Lokal Python Backend + Admin (http://localhost:8000/admin)
 echo.
@@ -21,7 +21,7 @@ if "%CHOICE%"=="3" goto run_backend
 :run_cloud
 echo.
 echo Brauzerda Cloud CRM ochilmoqda...
-start https://sport-jmu3.onrender.com/admin
+start https://sport-production-c0d6.up.railway.app/admin
 goto end
 
 :run_react

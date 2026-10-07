@@ -6,7 +6,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || 
   (localStorage.getItem('sportplus_use_local_backend') === 'true' 
     ? 'http://localhost:8000/api/v1/admin' 
-    : 'https://sport-jmu3.onrender.com/api/v1/admin');
+    : 'https://sport-production-c0d6.up.railway.app/api/v1/admin');
 
 
 // Admin demo/session token (ADMIN roli bilan)
